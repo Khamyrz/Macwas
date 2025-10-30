@@ -5,14 +5,15 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AccountantController;
 use App\Http\Controllers\PlumberController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\LoginMonitoringController;
 use App\Http\Controllers\Auth\AdminRegisteredUserController;
 use App\Models\SetupRequest;
 use Illuminate\Support\Facades\Route;
 
 
-// Redirect root URL to login
+// Redirect root URL to welcome page
 Route::get('/', function () {
-    return redirect()->route('login');
+    return view('auth.welcome');
 });
 
 // Removed admin registration routes per request
@@ -42,8 +43,10 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Admin routes
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/operations', [AdminController::class, 'operations'])->name('operations');
+    Route::get('/monthly-bills', [AdminController::class, 'monthlyBillsPage'])->name('monthly-bills');
     Route::get('/pending-accounts', [AdminController::class, 'pendingAccounts'])->name('pending-accounts');
     Route::post('/approve-account/{id}', [AdminController::class, 'approveAccount'])->name('approve-account');
     Route::post('/reject-account/{id}', [AdminController::class, 'rejectAccount'])->name('reject-account');
@@ -52,13 +55,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/assign-plumber', [AdminController::class, 'assignPlumber'])->name('assign-plumber');
     Route::post('/assign-disconnection', [AdminController::class, 'assignDisconnection'])->name('assign-disconnection');
     Route::get('/user-records/{role}', [AdminController::class, 'userRecords'])->name('user-records');
+    Route::get('/search-users/{role}', [AdminController::class, 'searchUsers'])->name('search-users');
     Route::post('/generate-monthly-bills', [AdminController::class, 'generateMonthlyBills'])->name('generate-monthly-bills');
     Route::get('/create-user', [AdminController::class, 'createUser'])->name('create-user');
     Route::post('/create-user', [AdminController::class, 'storeUser'])->name('store-user');
+    Route::get('/users/{id}', [AdminController::class, 'showUser'])->name('users.show');
+    Route::put('/users/{id}', [AdminController::class, 'updateUser'])->name('users.update');
+    Route::delete('/users/{id}', [AdminController::class, 'destroyUser'])->name('users.destroy');
+    
+    // Login Monitoring Routes
+    Route::get('/monitoring', [LoginMonitoringController::class, 'index'])->name('monitoring');
+    Route::get('/monitoring/data', [LoginMonitoringController::class, 'getLoginAttempts'])->name('monitoring.data');
+    Route::get('/monitoring/export', [LoginMonitoringController::class, 'export'])->name('monitoring.export');
+    Route::post('/monitoring/clear', [LoginMonitoringController::class, 'clearOldAttempts'])->name('monitoring.clear');
 });
 
 // Accountant routes
-Route::middleware(['auth', 'accountant'])->prefix('accountant')->name('accountant.')->group(function () {
+Route::middleware(['auth', 'verified', 'accountant'])->prefix('accountant')->name('accountant.')->group(function () {
     Route::get('/dashboard', [AccountantController::class, 'dashboard'])->name('dashboard');
     Route::get('/search-customers', [AccountantController::class, 'searchCustomers'])->name('search-customers');
     Route::post('/process-payment', [AccountantController::class, 'processPayment'])->name('process-payment');
@@ -68,21 +81,27 @@ Route::middleware(['auth', 'accountant'])->prefix('accountant')->name('accountan
 });
 
 // Plumber routes
-Route::middleware(['auth', 'plumber'])->prefix('plumber')->name('plumber.')->group(function () {
+Route::middleware(['auth', 'verified', 'plumber'])->prefix('plumber')->name('plumber.')->group(function () {
     Route::get('/dashboard', [PlumberController::class, 'dashboard'])->name('dashboard');
     Route::post('/start-job/{connectionId}', [PlumberController::class, 'startJob'])->name('start-job');
     Route::post('/complete-job/{connectionId}', [PlumberController::class, 'completeJob'])->name('complete-job');
     Route::get('/customer-history', [PlumberController::class, 'customerHistory'])->name('customer-history');
     Route::post('/update-availability', [PlumberController::class, 'updateAvailability'])->name('update-availability');
     Route::post('/record-reading/{customerId}', [PlumberController::class, 'recordReading'])->name('record-reading');
-    Route::get('/mid-reading/{customerId}', [PlumberController::class, 'midReadingForMonth'])->name('mid-reading');
+    Route::get('/receipt/{customerId}', [PlumberController::class, 'printBillReceipt'])->name('receipt');
+    Route::get('/last-reading/{customerId}', [PlumberController::class, 'lastReading'])->name('last-reading');
+    Route::post('/mark-notification-read/{notificationId}', [PlumberController::class, 'markNotificationRead'])->name('mark-notification-read');
+    Route::get('/notifications', [PlumberController::class, 'notifications'])->name('notifications');
+    Route::post('/mark-all-notifications-read', [PlumberController::class, 'markAllNotificationsRead'])->name('mark-all-notifications-read');
 });
 
 // Customer routes
-Route::middleware(['auth', 'customer'])->prefix('customer')->name('customer.')->group(function () {
+Route::middleware(['auth', 'verified', 'customer'])->prefix('customer')->name('customer.')->group(function () {
     Route::get('/dashboard', [CustomerController::class, 'dashboard'])->name('dashboard');
     Route::get('/bills', [CustomerController::class, 'bills'])->name('bills');
+    Route::get('/recent-bills', [CustomerController::class, 'recentBills'])->name('recent-bills');
     Route::get('/payment-history', [CustomerController::class, 'paymentHistory'])->name('payment-history');
+    Route::get('/recent-payments', [CustomerController::class, 'recentPayments'])->name('recent-payments');
     Route::post('/request-setup', function() {
         $user = auth()->user();
         // Create a pending setup request
@@ -97,7 +116,7 @@ Route::middleware(['auth', 'customer'])->prefix('customer')->name('customer.')->
     Route::post('/update-profile', [CustomerController::class, 'updateProfile'])->name('update-profile');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

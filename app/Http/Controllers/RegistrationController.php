@@ -24,14 +24,19 @@ class RegistrationController extends Controller
             'role' => 'required|in:plumber,accountant,customer',
             'age' => 'required|integer|min:18|max:120',
             'phone_number' => 'required|string|max:20',
-            'national_id' => 'required|string|max:50|unique:users',
+            // Accept National ID as an uploaded image file
+            'national_id' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'address' => 'required|string|max:500',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $photoPath = null;
+        $nationalIdPath = null;
         if ($request->hasFile('photo')) {
             $photoPath = $request->file('photo')->store('user-photos', 'public');
+        }
+        if ($request->hasFile('national_id')) {
+            $nationalIdPath = $request->file('national_id')->store('national-ids', 'public');
         }
 
         $user = User::create([
@@ -42,15 +47,17 @@ class RegistrationController extends Controller
             'role' => $request->role,
             'age' => $request->age,
             'phone_number' => $request->phone_number,
-            'national_id' => $request->national_id,
+            // Store the uploaded National ID image path
+            'national_id' => $nationalIdPath,
             'address' => $request->address,
             'photo' => $photoPath,
             'status' => 'pending', // Admin needs to approve
             'is_available' => $request->role === 'plumber', // Plumbers start as available
+            'customer_number' => User::generateCustomerNumber(),
         ]);
 
         return redirect()->route('login')
-            ->with('success', 'Registration successful! Please wait for admin approval.');
+            ->with('success', 'Successfully created, now wait for the Admin to approve your account.');
     }
 }
 

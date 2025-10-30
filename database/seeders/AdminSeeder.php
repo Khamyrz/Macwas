@@ -22,6 +22,7 @@ class AdminSeeder extends Seeder
             'address' => 'Admin Address',
             'status' => 'active',
             'is_available' => true,
+            'email_verified_at' => now(), // Admin users are automatically verified
         ]);
     }
 }

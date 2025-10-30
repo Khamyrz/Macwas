@@ -205,7 +205,7 @@
                 <div class="value">{{ optional($payment->waterBill->customer)->address }}</div>
                 
                 <div class="label">ACCOUNT NO</div>
-                <div class="value">CUST-{{ $payment->customer_id }}</div>
+                <div class="value">{{ optional($payment->waterBill->customer)->customer_number ?? 'CUST-'.$payment->customer_id }}</div>
                 
                 <div class="label">REGISTRATION NO.</div>
                 <div class="value">{{ optional($payment->waterBill->customer)->registration_no ?? 'N/A' }}</div>

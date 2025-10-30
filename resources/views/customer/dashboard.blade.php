@@ -31,9 +31,9 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                             </svg>
                         </div>
-                        <h4 class="mt-2 text-sm font-medium text-gray-900">Amount Due</h4>
+                        <h4 class="mt-2 text-sm font-medium text-gray-900">Total Bill</h4>
                         <p class="mt-1 text-lg font-semibold {{ $currentBill->isOverdue() ? 'text-red-600' : 'text-gray-900' }}">
-                            ₱{{ number_format($currentBill->balance, 2) }}
+                            ₱{{ number_format($currentBill->total_amount, 2) }}
                         </p>
                     </div>
                     
@@ -138,103 +138,7 @@
     </div>
     @endif
 
-    <!-- Recent Bills -->
-    <div class="bg-white rounded-lg shadow mb-8">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Recent Bills</h3>
-        </div>
-        <div class="p-6">
-            @if($recentBills->count() > 0)
-                <div class="space-y-4">
-                    @foreach($recentBills as $bill)
-                        <div class="border rounded-lg p-4 {{ $bill->status === 'paid' ? 'border-green-200 bg-green-50' : ($bill->status === 'partially_paid' ? 'border-yellow-200 bg-yellow-50' : 'border-red-200 bg-red-50') }}">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-900">{{ $bill->billing_month->format('M Y') }}</h4>
-                                    <p class="text-sm text-gray-500">{{ $bill->cubic_meters_used }} m³ used</p>
-                                    <p class="text-sm text-gray-500">Due: {{ $bill->due_date->format('M d, Y') }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-lg font-bold {{ $bill->status === 'paid' ? 'text-green-600' : ($bill->status === 'partially_paid' ? 'text-yellow-600' : 'text-red-600') }}">
-                                        ₱{{ number_format($bill->balance, 2) }}
-                                    </p>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $bill->status === 'paid' ? 'bg-green-100 text-green-800' : ($bill->status === 'partially_paid' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                        {{ ucfirst(str_replace('_', ' ', $bill->status)) }}
-                                    </span>
-                                    @if($bill->status === 'paid')
-                                        <div class="mt-1">
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                ✓ Paid {{ $bill->paid_date ? $bill->paid_date->format('M Y') : '' }}
-                                            </span>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-                <div class="mt-4 text-center">
-                    <a href="{{ route('customer.bills') }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                        View All Bills →
-                    </a>
-                </div>
-            @else
-                <p class="text-gray-500 text-center py-4">No bills found</p>
-            @endif
-        </div>
-    </div>
-
-    <!-- Recent Payments -->
-    <div class="bg-white rounded-lg shadow mb-8">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Recent Payments</h3>
-        </div>
-        <div class="p-6">
-            @if($paymentHistory->count() > 0)
-                <div class="space-y-4">
-                    @foreach($paymentHistory as $payment)
-                        <div class="border border-gray-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-900">{{ $payment->waterBill->billing_month->format('M Y') }}</h4>
-                                    <p class="text-sm text-gray-500">{{ $payment->payment_method }}</p>
-                                    <p class="text-sm text-gray-500">{{ $payment->created_at->format('M d, Y H:i') }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-lg font-bold text-green-600">₱{{ number_format($payment->amount_paid, 2) }}</p>
-                                    @if($payment->reference_number)
-                                        <p class="text-sm text-gray-500">Ref: {{ $payment->reference_number }}</p>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-                <div class="mt-4 text-center">
-                    <a href="{{ route('customer.payment-history') }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                        View All Payments →
-                    </a>
-                </div>
-            @else
-                <p class="text-gray-500 text-center py-4">No payment history found</p>
-            @endif
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Quick Actions</h3>
-        </div>
-        <div class="p-6">
-                        @if(!$waterConnection)
-                <form method="POST" action="{{ route('customer.request-setup') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="inline-flex items-center justify-center w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                        Request Water Setup
-                    </button>
-                </form>
-                @endif
+   
             </div>
         </div>
     </div>

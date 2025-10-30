@@ -22,11 +22,7 @@ class AccountantController extends Controller
         $customers = User::where('role', 'customer')->get();
         // Show only bills that have actual consumption (readings set)
         $unpaidBills = WaterBill::with('customer')
-            ->unpaid()
-            ->where('cubic_meters_used', '>', 0)
-            ->get();
-        $partiallyPaidBills = WaterBill::with('customer')
-            ->partiallyPaid()
+            ->where('status', '!=', 'paid')
             ->where('cubic_meters_used', '>', 0)
             ->get();
 
@@ -46,9 +42,8 @@ class AccountantController extends Controller
             }
         };
         $applyLateFee($unpaidBills);
-        $applyLateFee($partiallyPaidBills);
         
-        return view('accountant.dashboard', compact('customers', 'unpaidBills', 'partiallyPaidBills'));
+        return view('accountant.dashboard', compact('customers', 'unpaidBills'));
     }
 
     public function searchCustomers(Request $request)
@@ -115,9 +110,19 @@ class AccountantController extends Controller
             'notes' => $request->notes,
         ]);
 
-        // Update water bill
-        $waterBill->amount_paid += $request->amount_paid;
-        $waterBill->calculateBalance();
+        // Update water bill - require full payment
+        if ($request->amount_paid < $waterBill->balance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment must be equal to or greater than the total amount due (₱' . number_format($waterBill->balance, 2) . ')'
+            ], 400);
+        }
+        
+        $waterBill->amount_paid = $waterBill->total_amount + $waterBill->late_fee;
+        $waterBill->status = 'paid';
+        $waterBill->paid_date = now();
+        $waterBill->balance = 0;
+        $waterBill->save();
         
         return response()->json([
             'success' => true,

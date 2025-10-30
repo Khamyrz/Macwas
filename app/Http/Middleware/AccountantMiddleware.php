@@ -10,7 +10,11 @@ class AccountantMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check() || !auth()->user()->isAccountant()) {
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Please log in to access this page.');
+        }
+
+        if (!auth()->user()->isAccountant()) {
             abort(403, 'Unauthorized access. Accountant privileges required.');
         }
 

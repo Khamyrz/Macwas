@@ -17,7 +17,7 @@ class CustomerController extends Controller
         // Ensure current month's bill reflects consumption since completion date using current/changed rates
         $billingService->recalculateCurrentBillForCustomer(Auth::id());
 
-        $currentBill = Auth::user()->currentBill;
+        $currentBill = Auth::user()->fresh()->currentBill;
         $recentBills = Auth::user()->waterBills()
             ->orderBy('billing_month', 'desc')
             ->take(6)
@@ -51,6 +51,15 @@ class CustomerController extends Controller
         return view('customer.bills', compact('bills'));
     }
 
+    public function recentBills()
+    {
+        $recentBills = Auth::user()->waterBills()
+            ->orderBy('billing_month', 'desc')
+            ->take(10)
+            ->get();
+        return view('customer.recent-bills', compact('recentBills'));
+    }
+
     public function paymentHistory()
     {
         $payments = Auth::user()->customerPayments()
@@ -59,6 +68,16 @@ class CustomerController extends Controller
             ->paginate(15);
             
         return view('customer.payment-history', compact('payments'));
+    }
+
+    public function recentPayments()
+    {
+        $paymentHistory = Auth::user()->customerPayments()
+            ->with('waterBill')
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+        return view('customer.recent-payments', compact('paymentHistory'));
     }
 
     public function plumberInfo()

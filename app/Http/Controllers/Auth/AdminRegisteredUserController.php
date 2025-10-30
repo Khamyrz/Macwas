@@ -43,11 +43,14 @@ class AdminRegisteredUserController extends Controller
             'address' => 'N/A',
             'status' => 'active',
             'is_available' => true,
+            'customer_number' => User::generateCustomerNumber(),
+            'email_verified_at' => now(), // Admin users are automatically verified
         ]);
 
         Auth::login($user);
 
-        return redirect()->route('admin.dashboard');
+        return redirect()->route('admin.dashboard')
+            ->with('success', 'Admin account created successfully! You are now logged in.');
     }
 }
 

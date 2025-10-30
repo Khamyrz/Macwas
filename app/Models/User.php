@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
@@ -17,6 +18,7 @@ class User extends Authenticatable
         'last_name',
         'email',
         'password',
+        'plain_password',
         'role',
         'age',
         'phone_number',
@@ -25,6 +27,9 @@ class User extends Authenticatable
         'address',
         'status',
         'is_available',
+        'customer_number',
+        'email_verified_at',
+        'admin_created',
     ];
 
     protected $hidden = [
@@ -36,6 +41,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_available' => 'boolean',
+        'admin_created' => 'boolean',
     ];
 
     // Relationships
@@ -90,6 +96,36 @@ class User extends Authenticatable
         return $this->role === 'customer';
     }
 
+    /**
+     * Determine if the user has verified their email address.
+     * Admin users are considered verified by default.
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        // Admin users are always considered verified
+        if ($this->isAdmin()) {
+            return true;
+        }
+        
+        return ! is_null($this->email_verified_at);
+    }
+
+    /**
+     * Mark the given user's email as verified.
+     * For admin users, this is a no-op since they're always verified.
+     */
+    public function markEmailAsVerified(): bool
+    {
+        // Admin users are always verified, no need to mark
+        if ($this->isAdmin()) {
+            return true;
+        }
+        
+        return $this->forceFill([
+            'email_verified_at' => $this->freshTimestamp(),
+        ])->save();
+    }
+
     public function getFullNameAttribute(): string
     {
         return $this->first_name . ' ' . $this->last_name;
@@ -97,9 +133,31 @@ class User extends Authenticatable
 
     public function getCurrentBillAttribute()
     {
+        // Match the first day-of-month stored format (e.g., 'Y-m-01')
+        $currentMonth = now()->copy()->startOfMonth()->format('Y-m-d');
         return $this->waterBills()
             ->where('status', '!=', 'paid')
-            ->where('billing_month', now()->format('Y-m'))
+            ->where('billing_month', $currentMonth)
             ->first();
+    }
+
+    /**
+     * Generate a unique customer number in format YYYY-XXXX
+     */
+    public static function generateCustomerNumber(): string
+    {
+        $currentYear = date('Y');
+        $lastCustomer = self::where('customer_number', 'like', $currentYear . '-%')
+            ->orderBy('customer_number', 'desc')
+            ->first();
+
+        if ($lastCustomer && $lastCustomer->customer_number) {
+            $lastNumber = (int) substr($lastCustomer->customer_number, 5); // Extract number after YYYY-
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        return $currentYear . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }

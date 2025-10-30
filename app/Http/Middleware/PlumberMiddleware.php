@@ -10,7 +10,11 @@ class PlumberMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check() || !auth()->user()->isPlumber()) {
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Please log in to access this page.');
+        }
+
+        if (!auth()->user()->isPlumber()) {
             abort(403, 'Unauthorized access. Plumber privileges required.');
         }
 

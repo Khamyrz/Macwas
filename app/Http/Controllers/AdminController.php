@@ -8,12 +8,16 @@ use App\Models\WaterConnection;
 use App\Models\WaterBill;
 use App\Models\Payment;
 use App\Models\SetupRequest;
+use App\Models\OtpVerification;
+use App\Mail\OtpMail;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use App\Models\DisconnectionRequest;
 use Illuminate\Support\Facades\Schema;
+use App\Notifications\PlumberAssignedNotification;
 
 class AdminController extends Controller
 {
@@ -83,6 +87,50 @@ class AdminController extends Controller
             'disconnectionRequests'
         ));
     }
+
+    public function operations()
+    {
+        // Mirror data required by dashboard for operations view
+        $pendingConnections = WaterConnection::with(['customer', 'plumber'])->pending()->get();
+        $setupRequests = SetupRequest::with('customer')->where('status', 'pending')->get();
+        $availablePlumbers = User::where('role', 'plumber')->where('is_available', true)->get();
+
+        return view('admin.operations', compact(
+            'setupRequests',
+            'pendingConnections',
+            'availablePlumbers'
+        ));
+    }
+
+    public function monthlyBillsPage()
+    {
+        // Provide context for the monthly bills page
+        // Build database-agnostic month expression for grouping (SQLite/MySQL/Postgres)
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            $monthExpr = "strftime('%Y-%m', billing_month)";
+        } elseif ($driver === 'pgsql') {
+            $monthExpr = "to_char(billing_month, 'YYYY-MM')";
+        } else {
+            $monthExpr = "DATE_FORMAT(billing_month, '%Y-%m')";
+        }
+
+        $monthlyEarnings = WaterBill::selectRaw("$monthExpr as month, SUM(total_amount) as total")
+            ->where('status', 'paid')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        $monthlyConsumption = WaterBill::selectRaw("$monthExpr as month, SUM(cubic_meters_used) as total_cubic_meters")
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Recent bills (last 12)
+        $recentBills = WaterBill::orderBy('created_at', 'desc')->limit(12)->get();
+
+        return view('admin.monthly-bills', compact('monthlyEarnings', 'monthlyConsumption', 'recentBills'));
+    }
     
     public function assignDisconnection(Request $request)
     {
@@ -111,9 +159,20 @@ class AdminController extends Controller
     public function approveAccount(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        $user->update(['status' => 'active']);
-        
-        return redirect()->back()->with('success', 'Account approved successfully!');
+        // Activate account but DO NOT auto-verify email
+        $user->update([
+            'status' => 'active',
+        ]);
+
+        // Send OTP so user must verify on first login
+        try {
+            $otp = OtpVerification::generateOtp($user->id, 'login');
+            Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, 'login'));
+        } catch (\Exception $e) {
+            \Log::error('Failed to send OTP on approval: '.$e->getMessage());
+        }
+
+        return redirect()->back()->with('success', 'Account approved. OTP sent to the user; they must verify on first login.');
     }
 
     public function rejectAccount(Request $request, $id)
@@ -173,6 +232,32 @@ class AdminController extends Controller
     public function userRecords($role)
     {
         $users = User::where('role', $role)->get();
+        return view('admin.user-records', compact('users', 'role'));
+    }
+
+    public function searchUsers(Request $request, $role)
+    {
+        $searchTerm = $request->get('q', '');
+        
+        $users = User::where('role', $role)
+            ->where(function($query) use ($searchTerm) {
+                $query->where('first_name', 'like', "%{$searchTerm}%")
+                      ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                      ->orWhere('email', 'like', "%{$searchTerm}%")
+                      ->orWhere('phone_number', 'like', "%{$searchTerm}%")
+                      ->orWhere('address', 'like', "%{$searchTerm}%")
+                      ->orWhere('customer_number', 'like', "%{$searchTerm}%");
+            })
+            ->get();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'users' => $users,
+                'html' => view('admin.user-records-partial', compact('users', 'role'))->render()
+            ]);
+        }
+
         return view('admin.user-records', compact('users', 'role'));
     }
 
@@ -240,9 +325,10 @@ class AdminController extends Controller
             'address' => 'required|string|max:500',
             'phone_number' => 'required|string|max:20',
             'password' => 'required|string|min:6',
+            'assigned_plumber_id' => 'nullable|exists:users,id',
         ]);
 
-        $user = User::create([
+        $userData = [
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $request->email,
@@ -255,16 +341,157 @@ class AdminController extends Controller
             'address' => $request->address,
             'status' => 'active',
             'is_available' => $request->role === 'plumber',
-        ]);
+            'admin_created' => true, // Mark as admin-created account
+        ];
+
+        // Only assign customer number to customers
+        if ($request->role === 'customer') {
+            $userData['customer_number'] = User::generateCustomerNumber();
+        }
+
+        $user = User::create($userData);
+
+        // Send OTP verification for admin-created accounts
+        $otp = OtpVerification::generateOtp($user->id, 'login');
+        
+        try {
+            Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, 'login'));
+        } catch (\Exception $e) {
+            \Log::error('Failed to send OTP email: ' . $e->getMessage());
+        }
+
+        $message = ucfirst($request->role).' account created. User must verify OTP on first login before accessing the dashboard.';
+        if ($request->role === 'customer') {
+            $message .= ' with Customer Number: ' . $user->customer_number;
+            $message .= '. Customer can login using their email or customer number.';
+        } else {
+            $message .= '. ' . ucfirst($request->role) . ' can login using their email and password.';
+        }
+
+        // Handle plumber assignment for customers
+        if ($request->role === 'customer' && $request->assigned_plumber_id) {
+            $plumber = User::findOrFail($request->assigned_plumber_id);
+            
+            // Verify the assigned user is actually a plumber
+            if ($plumber->role !== 'plumber') {
+                $user->delete(); // Rollback user creation
+                return redirect()->back()->withErrors(['assigned_plumber_id' => 'Selected user is not a plumber.'])->withInput();
+            }
+            
+            // Verify plumber is active
+            if ($plumber->status !== 'active') {
+                $user->delete(); // Rollback user creation
+                return redirect()->back()->withErrors(['assigned_plumber_id' => 'Selected plumber is not active.'])->withInput();
+            }
+            
+            // Create water connection
+            $waterConnection = WaterConnection::create([
+                'customer_id' => $user->id,
+                'plumber_id' => $plumber->id,
+                'status' => 'pending',
+                'connection_date' => now(),
+                'notes' => 'Customer created with plumber assignment',
+            ]);
+
+            // Send notification to plumber
+            $plumber->notify(new PlumberAssignedNotification($user, $plumber));
+
+            $message .= ' and assigned to plumber ' . $plumber->full_name . '. The plumber has been notified.';
+        }
+
+        $redirectData = [
+            'id' => $user->id,
+            'name' => $user->full_name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'password' => $user->plain_password,
+        ];
+
+        // Only include customer number for customers
+        if ($request->role === 'customer') {
+            $redirectData['customer_number'] = $user->customer_number;
+        }
 
         return redirect()->route('admin.user-records', ['role' => $request->role])
-            ->with('success', ucfirst($request->role).' account created.')
-            ->with('created_user', [
-                'id' => $user->id,
-                'name' => $user->full_name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'password' => $user->plain_password,
+            ->with('success', $message)
+            ->with('created_user', $redirectData);
+    }
+
+    public function showUser($id)
+    {
+        $user = User::findOrFail($id);
+        return response()->json([
+            'success' => true,
+            'user' => $user
+        ]);
+    }
+
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $id,
+            'phone_number' => 'required|string|max:20',
+            'address' => 'required|string|max:500',
+            'status' => 'required|in:active,pending,inactive',
+            'password' => 'nullable|string|min:6',
+        ]);
+
+        $updateData = [
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'phone_number' => $request->phone_number,
+            'address' => $request->address,
+            'status' => $request->status,
+        ];
+
+        // Update password if provided
+        if ($request->password) {
+            $updateData['password'] = Hash::make($request->password);
+            $updateData['plain_password'] = $request->password;
+        }
+
+        $user->update($updateData);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'User updated successfully!'
             ]);
+        }
+
+        return redirect()->back()->with('success', 'User updated successfully!');
+    }
+
+    public function destroyUser($id)
+    {
+        $user = User::findOrFail($id);
+        
+        // Prevent deletion of admin users
+        if ($user->role === 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete admin users.'
+            ], 403);
+        }
+
+        // Delete related records first
+        $user->waterBills()->delete();
+        $user->payments()->delete();
+        $user->customerPayments()->delete();
+        $user->waterConnections()->delete();
+        $user->customerConnections()->delete();
+        
+        // Delete the user
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User deleted successfully!'
+        ]);
     }
 }

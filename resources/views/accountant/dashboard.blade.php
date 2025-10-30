@@ -39,7 +39,7 @@
     <!-- Unpaid Bills -->
     <div class="bg-white rounded-lg shadow mb-8">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Unpaid Bills</h3>
+            <h3 class="text-lg font-medium text-gray-900">Unpaid Bills (with ₱20 late fee for overdue bills)</h3>
         </div>
         <div class="p-6">
             @if($unpaidBills->count() > 0)
@@ -49,7 +49,7 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Billing Month</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Due</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount Due</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
@@ -78,7 +78,10 @@
                                         {{ $bill->billing_month->format('M Y') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
-                                        ₱{{ number_format($bill->balance, 2) }}
+                                        ₱{{ number_format($bill->total_amount + $bill->late_fee, 2) }}
+                                        @if($bill->late_fee > 0)
+                                            <span class="text-xs text-orange-600 block">(includes ₱{{ number_format($bill->late_fee, 2) }} late fee)</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $bill->due_date->format('M d, Y') }}
@@ -89,8 +92,8 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <button onclick="openPaymentModal({{ $bill->id }}, '{{ $bill->customer->full_name }}', {{ $bill->balance }})" 
-                                                class="text-blue-600 hover:text-blue-900">Process Payment</button>
+                                        <button onclick="openPaymentModal({{ $bill->id }}, '{{ $bill->customer->full_name }}', {{ $bill->total_amount + $bill->late_fee }})" 
+                                                class="text-blue-600 hover:text-blue-900">Process Full Payment</button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -103,67 +106,6 @@
         </div>
     </div>
 
-    <!-- Partially Paid Bills -->
-    <div class="bg-white rounded-lg shadow mb-8">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Partially Paid Bills</h3>
-        </div>
-        <div class="p-6">
-            @if($partiallyPaidBills->count() > 0)
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Billing Month</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Paid</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remaining Balance</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($partiallyPaidBills as $bill)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
-                                                @if($bill->customer->photo)
-                                                    <img class="h-10 w-10 rounded-full" src="{{ Storage::url($bill->customer->photo) }}" alt="">
-                                                @else
-                                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                                        <span class="text-gray-600 font-medium">{{ substr($bill->customer->first_name, 0, 1) }}{{ substr($bill->customer->last_name, 0, 1) }}</span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">{{ $bill->customer->full_name }}</div>
-                                                <div class="text-sm text-gray-500">{{ $bill->customer->address }}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $bill->billing_month->format('M Y') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                                        ₱{{ number_format($bill->amount_paid, 2) }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-orange-600">
-                                        ₱{{ number_format($bill->balance, 2) }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <button onclick="openPaymentModal({{ $bill->id }}, '{{ $bill->customer->full_name }}', {{ $bill->balance }})" 
-                                                class="text-blue-600 hover:text-blue-900">Complete Payment</button>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <p class="text-gray-500 text-center py-4">No partially paid bills found</p>
-            @endif
-        </div>
-    </div>
 </div>
 
 <!-- Payment Modal -->
@@ -194,15 +136,11 @@
                 </div>
                 
                 <div class="mb-4">
-                    <label for="amountPaid" class="block text-sm font-medium text-gray-700 mb-2">Amount to Pay</label>
+                    <label for="amountPaid" class="block text-sm font-medium text-gray-700 mb-2">Amount to Pay (Full Payment Required)</label>
                     <input type="number" id="amountPaid" name="amount_paid" step="0.01" min="0" 
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                           oninput="calculateBalance()" onkeyup="calculateBalance()" onchange="calculateBalance()">
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Remaining Balance</label>
-                    <p id="remainingBalance" class="font-bold text-lg">₱0.00</p>
+                           oninput="validateFullPayment()" onkeyup="validateFullPayment()" onchange="validateFullPayment()">
+                    <p class="text-xs text-gray-500 mt-1">Must pay the full amount due</p>
                 </div>
                 
                 <div class="mb-4">
@@ -317,9 +255,9 @@ function displaySearchResults(customers) {
                             ${customer.water_bills.map(bill => `
                                 <div class="flex justify-between items-center text-sm">
                                     <span>${new Date(bill.billing_month).toLocaleDateString('en-US', {month: 'short', year: 'numeric'})}</span>
-                                    <span class="font-medium text-red-600">₱${parseFloat(bill.balance).toFixed(2)}</span>
-                                    <button onclick="openPaymentModal(${bill.id}, '${customer.first_name} ${customer.last_name}', ${bill.balance})" 
-                                            class="text-blue-600 hover:text-blue-800 text-sm font-medium">Process Payment</button>
+                                    <span class="font-medium text-red-600">₱${(parseFloat(bill.total_amount) + parseFloat(bill.late_fee)).toFixed(2)}</span>
+                                    <button onclick="openPaymentModal(${bill.id}, '${customer.first_name} ${customer.last_name}', ${bill.total_amount + bill.late_fee})" 
+                                            class="text-blue-600 hover:text-blue-800 text-sm font-medium">Process Full Payment</button>
                                 </div>
                             `).join('')}
                         </div>
@@ -339,7 +277,6 @@ function openPaymentModal(billId, customerName, amountDue) {
     document.getElementById('customerName').textContent = customerName;
     document.getElementById('amountDue').textContent = '₱' + parseFloat(amountDue).toFixed(2);
     document.getElementById('amountPaid').value = '';
-    document.getElementById('remainingBalance').textContent = '₱0.00';
     document.getElementById('paymentMethod').value = 'cash';
     document.getElementById('referenceNumber').value = '';
     document.getElementById('notes').value = '';
@@ -349,38 +286,43 @@ function openPaymentModal(billId, customerName, amountDue) {
     document.getElementById('printReceiptBtn').disabled = true;
     
     document.getElementById('paymentModal').classList.remove('hidden');
-    calculateBalance();
+    validateFullPayment();
 }
 
 function closePaymentModal() {
     document.getElementById('paymentModal').classList.add('hidden');
 }
 
-function calculateBalance() {
+function validateFullPayment() {
     const amountDue = parseFloat(document.getElementById('amountDue').textContent.replace('₱', ''));
     const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
-    const remaining = Math.max(amountDue - amountPaid, 0);
-    const remainingEl = document.getElementById('remainingBalance');
-
-    remainingEl.textContent = '₱' + remaining.toFixed(2);
-
-    // Enable only if cash >= bill and > 0
     const submitBtn = document.getElementById('submitPaymentBtn');
-    const isSufficient = amountPaid >= amountDue && amountPaid > 0;
-    submitBtn.disabled = !isSufficient;
-
-    // Color: green when sufficient, red when insufficient
-    remainingEl.className = 'font-bold text-lg ' + (isSufficient ? 'text-green-600' : 'text-red-600');
+    
+    // Enable only if payment equals the full amount due
+    const isValidPayment = amountPaid === amountDue && amountPaid > 0;
+    submitBtn.disabled = !isValidPayment;
+    
+    // Visual feedback
+    const amountInput = document.getElementById('amountPaid');
+    if (amountPaid > 0) {
+        if (isValidPayment) {
+            amountInput.className = 'w-full px-3 py-2 border border-green-300 rounded-md focus:ring-green-500 focus:border-green-500 bg-green-50';
+        } else {
+            amountInput.className = 'w-full px-3 py-2 border border-red-300 rounded-md focus:ring-red-500 focus:border-red-500 bg-red-50';
+        }
+    } else {
+        amountInput.className = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500';
+    }
 }
 
 document.getElementById('paymentForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    // Enforce: cash >= bill
+    // Enforce: payment must equal the full amount due
     const amountDue = parseFloat(document.getElementById('amountDue').textContent.replace('₱', ''));
     const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
-    if (!(amountPaid >= amountDue && amountPaid > 0)) {
-        alert('Insufficient cash. Amount to Pay must be greater than or equal to Amount Due.');
+    if (amountPaid !== amountDue || amountPaid <= 0) {
+        alert('Payment must equal the full amount due (₱' + amountDue.toFixed(2) + ').');
         return;
     }
     

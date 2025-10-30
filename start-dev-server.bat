@@ -1,0 +1,9 @@
+@echo off
+echo Starting Madridejos Community Waterworks System Development Server...
+echo.
+echo Clearing all user sessions (logging out all users)...
+php artisan sessions:clear-all
+echo.
+echo Starting development server...
+php artisan serve
+
