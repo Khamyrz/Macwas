@@ -21,7 +21,7 @@
     <header class="bg-white border-b">
         <div class="max-w-7xl mx-auto px-4 py-2">
             <div class="flex flex-col items-center justify-center">
-                <h1 class="text-lg font-bold text-blue-600 mb-1">Macwas Billing</h1>
+                <h1 class="text-lg font-bold text-blue-600 mb-1">Macwas Water Installment & Billing</h1>
                 <!-- Logo image - place your logo.png in public/images/ -->
                 <img src="{{ asset('images/logo.png') }}" 
                      alt="Water Management Logo" 
