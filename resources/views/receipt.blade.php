@@ -24,25 +24,20 @@
             text-align: center;
             margin-bottom: 30px;
         }
-        
+
+        /* Updated Logo Section */
         .logo {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(45deg, #4a90e2, #7bb3f0);
-            border-radius: 50%;
+            width: 80px;
+            height: 80px;
             margin: 0 auto 20px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 24px;
         }
-        
-        .logo::before {
-            content: "💧";
-            font-size: 30px;
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
         }
         
         .company-name {
@@ -184,7 +179,9 @@
         <div class="horizontal-line"></div>
         
         <div class="header">
-            <div class="logo"></div>
+            <div class="logo">
+                <img src="images/logo.png" alt="MACWAS Logo">
+            </div>
             <div class="company-name">MADRIDEJOS COMMUNITY WATERWORKS SYSTEM</div>
             <div class="company-address">
                 MUNICIPALITY OF MADRIDEJOS<br>
