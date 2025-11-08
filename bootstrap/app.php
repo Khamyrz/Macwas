@@ -11,8 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Security headers are handled by AppServiceProvider
-        // This ensures headers work without any class dependencies
+        // Add security headers middleware (only if file exists)
+        $securityHeadersPath = __DIR__ . '/../app/Http/Middleware/SecurityHeaders.php';
+        if (file_exists($securityHeadersPath)) {
+            $middleware->append('App\Http\Middleware\SecurityHeaders');
+        }
         
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
