@@ -12,24 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Add security headers middleware to web group (applies to all web routes)
-        $securityHeadersPath = __DIR__ . '/../app/Http/Middleware/SecurityHeaders.php';
-        if (file_exists($securityHeadersPath)) {
-            $middleware->web(append: [\App\Http\Middleware\SecurityHeaders::class]);
-        } else {
-            // If middleware file doesn't exist, add headers directly via closure
-            $middleware->web(append: [function (\Illuminate\Http\Request $request, \Closure $next) {
-                $response = $next($request);
-                
-                // Set all required security headers on every response
-                $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-                $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
-                $response->headers->set('X-Content-Type-Options', 'nosniff');
-                $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-                $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()');
-                
-                return $response;
-            }]);
-        }
+        // Security headers are also set via event listener in AppServiceProvider as backup
+        $middleware->web(append: \App\Http\Middleware\SecurityHeaders::class);
         
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,

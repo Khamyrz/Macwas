@@ -33,13 +33,14 @@ class AppServiceProvider extends ServiceProvider
             
             $response = $event->getResponse();
             
-            // Set all required security headers on every response
+            // Always set all required security headers on every response
             // These headers are required by securityheaders.com
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-            $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
-            $response->headers->set('X-Content-Type-Options', 'nosniff');
-            $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-            $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()');
+            // Using set() will replace any existing headers to ensure correct values
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains', true);
+            $response->headers->set('X-Frame-Options', 'SAMEORIGIN', true);
+            $response->headers->set('X-Content-Type-Options', 'nosniff', true);
+            $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin', true);
+            $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()', true);
         });
     }
 }
