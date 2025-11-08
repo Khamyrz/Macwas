@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Http\Request;
 use Closure;
+use Illuminate\Foundation\Http\Kernel;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,13 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Add security headers to ALL responses
-        // This middleware will run on every request
-        try {
-            $kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
-            
-            // Create a closure middleware that sets security headers
-            $securityHeadersMiddleware = function (Request $request, Closure $next) {
+        // Add security headers to ALL responses using global middleware
+        $this->app->afterResolving(Kernel::class, function (Kernel $kernel) {
+            $kernel->pushMiddleware(function (Request $request, Closure $next) {
                 $response = $next($request);
                 
                 // Set all required security headers
@@ -38,15 +35,7 @@ class AppServiceProvider extends ServiceProvider
                 $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()');
                 
                 return $response;
-            };
-            
-            // Add to global middleware stack
-            if (method_exists($kernel, 'pushMiddleware')) {
-                $kernel->pushMiddleware($securityHeadersMiddleware);
-            }
-        } catch (\Exception $e) {
-            // Silently fail if kernel is not available
-            // Headers will still be set if SecurityHeaders middleware exists
-        }
+            });
+        });
     }
 }
