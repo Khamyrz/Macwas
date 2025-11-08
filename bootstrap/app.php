@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Add security headers middleware (only if file exists)
+        // AppServiceProvider will also set headers as backup
         $securityHeadersPath = __DIR__ . '/../app/Http/Middleware/SecurityHeaders.php';
         if (file_exists($securityHeadersPath)) {
             $middleware->append('App\Http\Middleware\SecurityHeaders');

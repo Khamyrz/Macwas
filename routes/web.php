@@ -29,13 +29,18 @@ Route::middleware('guest')->group(function () {
 Route::get('/dashboard', function () {
     $user = auth()->user();
     
-    if ($user->isAdmin()) {
+    // Refresh user from database to ensure we have the correct role
+    $user->refresh();
+    
+    // Explicitly check each role and redirect to correct dashboard
+    // Order matters - check most specific roles first
+    if ($user->role === 'admin') {
         return redirect()->route('admin.dashboard');
-    } elseif ($user->isAccountant()) {
+    } elseif ($user->role === 'accountant') {
         return redirect()->route('accountant.dashboard');
-    } elseif ($user->isPlumber()) {
+    } elseif ($user->role === 'plumber') {
         return redirect()->route('plumber.dashboard');
-    } elseif ($user->isCustomer()) {
+    } elseif ($user->role === 'customer') {
         return redirect()->route('customer.dashboard');
     }
     

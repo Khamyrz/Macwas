@@ -198,8 +198,17 @@ class AuthenticatedSessionController extends Controller
                 }
             }
 
-            // Always redirect based on user's actual role (ignore intended URL to prevent wrong dashboard access)
-            return redirect($this->getRedirectRoute($user->role));
+            // Always redirect based on user's actual role from database (ignore intended URL to prevent wrong dashboard access)
+            // Force refresh user from database to ensure we have the correct role
+            $user->refresh();
+            $redirectRoute = $this->getRedirectRoute($user->role);
+            
+            // Double-check: Ensure customer always goes to customer dashboard
+            if ($user->role === 'customer') {
+                $redirectRoute = route('customer.dashboard');
+            }
+            
+            return redirect($redirectRoute);
         }
 
         // Record failed login attempt
@@ -219,13 +228,19 @@ class AuthenticatedSessionController extends Controller
      */
     private function getRedirectRoute(string $role): string
     {
-        return match($role) {
-            'admin' => route('admin.dashboard'),
-            'accountant' => route('accountant.dashboard'),
-            'plumber' => route('plumber.dashboard'),
-            'customer' => route('customer.dashboard'),
-            default => route('dashboard')
-        };
+        // Explicitly map each role to ensure correct redirect
+        switch($role) {
+            case 'admin':
+                return route('admin.dashboard');
+            case 'accountant':
+                return route('accountant.dashboard');
+            case 'plumber':
+                return route('plumber.dashboard');
+            case 'customer':
+                return route('customer.dashboard');
+            default:
+                return route('dashboard');
+        }
     }
 
     /**
