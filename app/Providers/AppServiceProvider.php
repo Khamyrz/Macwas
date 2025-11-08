@@ -3,8 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Foundation\Http\Events\RequestHandled;
-use Illuminate\Support\Facades\Event;
+use Illuminate\Http\Request;
+use Closure;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,19 +21,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Add security headers to ALL responses using event listener
-        // This works as a fallback if SecurityHeaders middleware doesn't exist
-        Event::listen(RequestHandled::class, function (RequestHandled $event) {
-            $response = $event->response;
-            
-            if ($response && method_exists($response, 'headers')) {
+        // Add security headers to ALL responses using global middleware
+        // This ensures headers are set even if SecurityHeaders middleware doesn't exist
+        $this->app->afterResolving(\Illuminate\Contracts\Http\Kernel::class, function ($kernel) {
+            $kernel->pushMiddleware(function (Request $request, Closure $next) {
+                $response = $next($request);
+                
                 // Set all required security headers
                 $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
                 $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
                 $response->headers->set('X-Content-Type-Options', 'nosniff');
                 $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
                 $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()');
-            }
+                
+                return $response;
+            });
         });
     }
 }

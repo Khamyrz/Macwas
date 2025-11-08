@@ -385,5 +385,6 @@ function printReceipt() {
     window.open(`/accountant/receipt/${paymentId}?print=1`, '_blank', 'height=600,width=420');
 }
 </script>
+
 @endsection
 

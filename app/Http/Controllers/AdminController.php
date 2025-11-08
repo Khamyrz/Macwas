@@ -369,34 +369,54 @@ class AdminController extends Controller
         }
 
         // Handle plumber assignment for customers
-        if ($request->role === 'customer' && $request->assigned_plumber_id) {
-            $plumber = User::findOrFail($request->assigned_plumber_id);
+        if ($request->role === 'customer') {
+            $plumber = null;
             
-            // Verify the assigned user is actually a plumber
-            if ($plumber->role !== 'plumber') {
-                $user->delete(); // Rollback user creation
-                return redirect()->back()->withErrors(['assigned_plumber_id' => 'Selected user is not a plumber.'])->withInput();
+            // If plumber is manually assigned, use it
+            if ($request->assigned_plumber_id) {
+                $plumber = User::findOrFail($request->assigned_plumber_id);
+                
+                // Verify the assigned user is actually a plumber
+                if ($plumber->role !== 'plumber') {
+                    $user->delete(); // Rollback user creation
+                    return redirect()->back()->withErrors(['assigned_plumber_id' => 'Selected user is not a plumber.'])->withInput();
+                }
+                
+                // Verify plumber is active
+                if ($plumber->status !== 'active') {
+                    $user->delete(); // Rollback user creation
+                    return redirect()->back()->withErrors(['assigned_plumber_id' => 'Selected plumber is not active.'])->withInput();
+                }
+            } else {
+                // Auto-assign an available plumber (free/available)
+                $plumber = User::where('role', 'plumber')
+                    ->where('status', 'active')
+                    ->where('is_available', true)
+                    ->first();
+                
+                if ($plumber) {
+                    // Mark plumber as unavailable
+                    $plumber->update(['is_available' => false]);
+                }
             }
             
-            // Verify plumber is active
-            if ($plumber->status !== 'active') {
-                $user->delete(); // Rollback user creation
-                return redirect()->back()->withErrors(['assigned_plumber_id' => 'Selected plumber is not active.'])->withInput();
+            // Create water connection if plumber is assigned
+            if ($plumber) {
+                $waterConnection = WaterConnection::create([
+                    'customer_id' => $user->id,
+                    'plumber_id' => $plumber->id,
+                    'status' => 'pending',
+                    'connection_date' => now(),
+                    'notes' => $request->assigned_plumber_id ? 'Customer created with plumber assignment' : 'Customer created with auto-assigned plumber',
+                ]);
+
+                // Send notification to plumber
+                $plumber->notify(new PlumberAssignedNotification($user, $plumber));
+
+                $message .= ' and assigned to plumber ' . $plumber->full_name . '. The plumber has been notified.';
+            } else {
+                $message .= '. No available plumber found for auto-assignment.';
             }
-            
-            // Create water connection
-            $waterConnection = WaterConnection::create([
-                'customer_id' => $user->id,
-                'plumber_id' => $plumber->id,
-                'status' => 'pending',
-                'connection_date' => now(),
-                'notes' => 'Customer created with plumber assignment',
-            ]);
-
-            // Send notification to plumber
-            $plumber->notify(new PlumberAssignedNotification($user, $plumber));
-
-            $message .= ' and assigned to plumber ' . $plumber->full_name . '. The plumber has been notified.';
         }
 
         $redirectData = [

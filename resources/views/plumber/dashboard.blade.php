@@ -478,6 +478,7 @@ function toggleAvailability() {
     form.submit();
 }
 </script>
+
 @endsection
 
 

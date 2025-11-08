@@ -24,7 +24,7 @@ class OtpVerificationController extends Controller
     /**
      * Verify OTP code
      */
-    public function verify(Request $request): RedirectResponse
+    public function verify(Request $request)
     {
         $request->validate([
             'otp_code' => ['required', 'string', 'size:6']
@@ -34,15 +34,22 @@ class OtpVerificationController extends Controller
         $redirectRoute = $request->session()->get('otp_redirect_route');
 
         if (!$userId || !$redirectRoute) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Session expired. Please login again.'], 400);
+            }
             return redirect()->route('login')->with('error', 'Session expired. Please login again.');
         }
 
         $otp = OtpVerification::where('user_id', $userId)
             ->where('otp_code', $request->otp_code)
             ->where('type', 'login')
+            ->where('is_used', false)
             ->first();
 
         if (!$otp || !$otp->isValid()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Invalid or expired OTP code.'], 400);
+            }
             return back()->withErrors([
                 'otp_code' => 'Invalid or expired OTP code.'
             ]);
@@ -51,41 +58,63 @@ class OtpVerificationController extends Controller
         // Mark OTP as used
         $otp->update(['is_used' => true]);
 
-        // Get user and login
+        // Get user
         $user = User::find($userId);
         if (!$user) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'User not found.'], 404);
+            }
             return redirect()->route('login')->with('error', 'User not found.');
         }
 
-        // Mark email as verified
-        $user->update(['email_verified_at' => now()]);
+        // Mark email as verified (if not already)
+        if (!$user->email_verified_at) {
+            $user->update(['email_verified_at' => now()]);
+        }
 
         // Regenerate session to prevent CSRF issues
         $request->session()->regenerate();
 
-        // Login user
-        Auth::login($user);
+        // Login user (if not already logged in)
+        if (!Auth::check() || Auth::id() != $user->id) {
+            Auth::login($user);
+        }
 
         // Clear OTP session data
-        $request->session()->forget(['otp_user_id', 'otp_redirect_route']);
+        $request->session()->forget(['otp_user_id', 'otp_redirect_route', 'otp_required']);
+
+        // For AJAX requests (modal), return JSON with redirect URL
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'OTP verified successfully! Redirecting to dashboard...',
+                'redirect' => $redirectRoute
+            ]);
+        }
 
         // Redirect to the intended route
-        return redirect()->intended($redirectRoute)->with('success', 'Email verified successfully!');
+        return redirect($redirectRoute)->with('success', 'OTP verified successfully!');
     }
 
     /**
      * Resend OTP
      */
-    public function resend(Request $request): RedirectResponse
+    public function resend(Request $request)
     {
         $userId = $request->session()->get('otp_user_id');
 
         if (!$userId) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Session expired. Please login again.'], 400);
+            }
             return redirect()->route('login')->with('error', 'Session expired. Please login again.');
         }
 
         $user = User::find($userId);
         if (!$user) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'User not found.'], 404);
+            }
             return redirect()->route('login')->with('error', 'User not found.');
         }
 
@@ -94,9 +123,17 @@ class OtpVerificationController extends Controller
 
         try {
             Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, 'login'));
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'A new OTP has been sent to your email.']);
+            }
             return back()->with('success', 'A new OTP has been sent to your email.');
         } catch (\Exception $e) {
             \Log::error('Failed to resend OTP: ' . $e->getMessage());
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Failed to send OTP. Please try again.'], 500);
+            }
             return back()->with('error', 'Failed to send OTP. Please try again.');
         }
     }

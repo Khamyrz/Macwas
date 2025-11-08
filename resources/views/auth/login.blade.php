@@ -571,6 +571,135 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// OTP Verification Modal for Plumber and Accountant (shows before dashboard redirect)
+@if(session('otp_required') && session()->has('otp_user_id'))
+document.addEventListener('DOMContentLoaded', function() {
+    // Show OTP modal immediately on login page
+    showOtpModal();
+});
+
+function showOtpModal() {
+    Swal.fire({
+        title: 'OTP Verification Required',
+        html: `
+            <div class="text-center">
+                <div class="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4" style="margin: 0 auto;">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 0 1121 9z"></path>
+                    </svg>
+                </div>
+                <p class="text-gray-600 mb-4">Enter the 6-digit code sent to your email</p>
+                <input type="text" id="otpInput" maxlength="6" 
+                       class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-center text-2xl tracking-widest font-mono"
+                       placeholder="000000" autofocus>
+                <p class="text-sm text-gray-500 mt-2">Check your email for the verification code</p>
+            </div>
+        `,
+        showCancelButton: true,
+        showConfirmButton: true,
+        confirmButtonText: 'Verify',
+        cancelButtonText: 'Resend OTP',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            const otpInput = document.getElementById('otpInput');
+            otpInput.addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+                if (this.value.length === 6) {
+                    verifyOtp(this.value);
+                }
+            });
+            otpInput.focus();
+        },
+        preConfirm: () => {
+            const otpCode = document.getElementById('otpInput').value;
+            if (!otpCode || otpCode.length !== 6) {
+                Swal.showValidationMessage('Please enter a valid 6-digit OTP code');
+                return false;
+            }
+            return verifyOtp(otpCode);
+        }
+    }).then((result) => {
+        if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
+            resendOtp();
+        }
+    });
+}
+
+function verifyOtp(otpCode) {
+    return fetch('{{ route("otp.verify") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ otp_code: otpCode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Verified!',
+                text: data.message || 'OTP verified successfully! Redirecting to dashboard...',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                // Redirect to dashboard after successful verification
+                window.location.href = data.redirect || '{{ session("otp_redirect_route") }}';
+            });
+            return true;
+        } else {
+            Swal.showValidationMessage(data.message || 'Invalid or expired OTP code');
+            return false;
+        }
+    })
+    .catch(error => {
+        Swal.showValidationMessage('An error occurred. Please try again.');
+        return false;
+    });
+}
+
+function resendOtp() {
+    fetch('{{ route("otp.resend") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'OTP Resent',
+                text: data.message || 'A new OTP has been sent to your email.',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                showOtpModal();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Failed to resend OTP. Please try again.'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred. Please try again.'
+        });
+    });
+}
+@endif
+
 </script>
 <style>
 </style>

@@ -10,26 +10,21 @@ use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use Illuminate\Support\Facades\Route;
 
+// Login GET route - allow authenticated users with OTP required to access
+Route::get('login', [AuthenticatedSessionController::class, 'create'])
+            ->name('login');
+
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
                 ->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
-                ->name('login');
-
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
-    // OTP Verification Routes
+    // OTP Verification Routes (for guest users)
     Route::get('otp-verify', [App\Http\Controllers\OtpVerificationController::class, 'show'])
                 ->name('otp.verify');
-
-    Route::post('otp-verify', [App\Http\Controllers\OtpVerificationController::class, 'verify'])
-                ->name('otp.verify');
-
-    Route::post('otp-resend', [App\Http\Controllers\OtpVerificationController::class, 'resend'])
-                ->name('otp.resend');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
                 ->name('password.request');
@@ -55,6 +50,13 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    // OTP Verification Routes (for authenticated users - modal)
+    Route::post('otp-verify', [App\Http\Controllers\OtpVerificationController::class, 'verify'])
+                ->name('otp.verify');
+
+    Route::post('otp-resend', [App\Http\Controllers\OtpVerificationController::class, 'resend'])
+                ->name('otp.resend');
+
     Route::get('verify-email', [EmailVerificationPromptController::class, '__invoke'])
                 ->name('verification.notice');
 

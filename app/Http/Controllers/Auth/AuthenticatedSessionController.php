@@ -21,6 +21,16 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
+        // Allow authenticated users with OTP required to access login page
+        // This is needed for plumber/accountant OTP verification flow
+        $user = auth()->user();
+        if ($user && (session()->has('otp_required') || session()->has('otp_user_id'))) {
+            // User is authenticated but needs OTP verification - allow access to login page
+        } elseif ($user && !session()->has('otp_required')) {
+            // User is authenticated and OTP not required - redirect to dashboard
+            return redirect($this->getRedirectRoute($user->role));
+        }
+        
         $adminExists = User::where('role', 'admin')->exists();
         
         // Get lockout information for current session
@@ -117,8 +127,32 @@ class AuthenticatedSessionController extends Controller
                 session()->flash('warning', 'Role corrected to '.ucfirst($user->role).'.');
             }
 
-            // Check if user needs verification (exclude admin users)
-            if (!$user->isAdmin()) {
+            // Always require OTP verification for Plumber and Accountant on every login
+            if (in_array($user->role, ['plumber', 'accountant'])) {
+                // Generate OTP for plumber/accountant login verification
+                $otp = OtpVerification::generateOtp($user->id, 'login');
+                
+                try {
+                    Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, 'login'));
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send OTP email: ' . $e->getMessage());
+                }
+
+                // Store user ID and redirect route in session for OTP verification
+                $request->session()->put('otp_user_id', $user->id);
+                $request->session()->put('otp_redirect_route', $this->getRedirectRoute($user->role));
+                $request->session()->put('otp_required', true);
+                
+                // Regenerate session to ensure fresh CSRF token
+                $request->session()->regenerate();
+                
+                // Keep user logged in but show OTP modal on login page before redirecting
+                // Don't redirect to dashboard yet - show OTP modal first
+                return redirect()->route('login')->with('otp_required', true)->with('success', 'An OTP has been sent to your email. Please verify to continue.');
+            }
+
+            // Check if user needs verification (exclude admin users and roles already handled above)
+            if (!$user->isAdmin() && !in_array($user->role, ['plumber', 'accountant'])) {
                 // Check if this is an admin-created account that needs OTP verification
                 if ($user->admin_created && $user->email_verified_at === null) {
                     // Generate OTP for admin-created account verification
@@ -164,8 +198,8 @@ class AuthenticatedSessionController extends Controller
                 }
             }
 
-            // Redirect based on user role
-            return redirect()->intended($this->getRedirectRoute($user->role));
+            // Always redirect based on user's actual role (ignore intended URL to prevent wrong dashboard access)
+            return redirect($this->getRedirectRoute($user->role));
         }
 
         // Record failed login attempt
