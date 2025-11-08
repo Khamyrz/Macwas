@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Add security headers globally to all requests
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         
+        // Also ensure it runs on web routes
+        $middleware->web(append: \App\Http\Middleware\SecurityHeaders::class);
+        
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'accountant' => \App\Http\Middleware\AccountantMiddleware::class,
