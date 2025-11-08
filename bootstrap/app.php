@@ -11,9 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Add security headers middleware to web group (applies to all web routes)
-        // Security headers are also set via event listener in AppServiceProvider as backup
-        $middleware->web(append: \App\Http\Middleware\SecurityHeaders::class);
+        // Security headers are set via event listener in AppServiceProvider
+        // This approach works even if SecurityHeaders.php file doesn't exist on production
         
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
