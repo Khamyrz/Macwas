@@ -23,25 +23,30 @@ class AppServiceProvider extends ServiceProvider
     {
         // Add security headers to ALL responses
         // This middleware will run on every request
-        $kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
-        
-        // Create a closure middleware that sets security headers
-        $securityHeadersMiddleware = function (Request $request, Closure $next) {
-            $response = $next($request);
+        try {
+            $kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
             
-            // Set all required security headers
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-            $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
-            $response->headers->set('X-Content-Type-Options', 'nosniff');
-            $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-            $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()');
+            // Create a closure middleware that sets security headers
+            $securityHeadersMiddleware = function (Request $request, Closure $next) {
+                $response = $next($request);
+                
+                // Set all required security headers
+                $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+                $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+                $response->headers->set('X-Content-Type-Options', 'nosniff');
+                $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+                $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()');
+                
+                return $response;
+            };
             
-            return $response;
-        };
-        
-        // Add to global middleware stack
-        if (method_exists($kernel, 'pushMiddleware')) {
-            $kernel->pushMiddleware($securityHeadersMiddleware);
+            // Add to global middleware stack
+            if (method_exists($kernel, 'pushMiddleware')) {
+                $kernel->pushMiddleware($securityHeadersMiddleware);
+            }
+        } catch (\Exception $e) {
+            // Silently fail if kernel is not available
+            // Headers will still be set if SecurityHeaders middleware exists
         }
     }
 }

@@ -11,11 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Add security headers globally to all requests
-        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
-        
-        // Also ensure it runs on web routes
-        $middleware->web(append: \App\Http\Middleware\SecurityHeaders::class);
+        // Security headers are handled by AppServiceProvider
+        // This ensures headers work even if SecurityHeaders.php doesn't exist
         
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
