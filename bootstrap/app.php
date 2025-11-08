@@ -11,8 +11,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Security headers are handled by AppServiceProvider
-        // This ensures headers work even if SecurityHeaders.php doesn't exist
+        // Add security headers directly using closure middleware
+        // This avoids any autoloader issues and works without SecurityHeaders.php file
+        $middleware->append(function ($request, $next) {
+            $response = $next($request);
+            
+            // Set all required security headers
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+            $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+            $response->headers->set('X-Content-Type-Options', 'nosniff');
+            $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+            $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()');
+            
+            return $response;
+        });
         
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
