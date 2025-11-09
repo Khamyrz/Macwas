@@ -87,7 +87,7 @@ class LoginAttempt extends Model
     /**
      * Set lockout for account
      */
-    public static function setLockout($email, $ipAddress, $minutes = 5, $latitude = null, $longitude = null)
+    public static function setLockout($email, $ipAddress, $minutes = 1, $latitude = null, $longitude = null)
     {
         $lockoutUntil = now()->addMinutes($minutes);
         

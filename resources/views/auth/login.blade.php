@@ -118,8 +118,11 @@ window.addEventListener('load', function() {
     // Check server-side lockout info first
     if (serverLockoutInfo) {
         if (serverLockoutInfo.locked) {
-            // Server says we're locked out
-            const remainingMs = serverLockoutInfo.remaining_minutes * 60 * 1000;
+            // Server says we're locked out - use remaining_seconds if available, otherwise convert from minutes
+            const remainingSeconds = serverLockoutInfo.remaining_seconds !== undefined 
+                ? serverLockoutInfo.remaining_seconds 
+                : (serverLockoutInfo.remaining_minutes * 60);
+            const remainingMs = Math.min(remainingSeconds * 1000, 60 * 1000);
             lockoutEndTime = Date.now() + remainingMs;
             localStorage.setItem('loginLockoutEndTime', lockoutEndTime.toString());
             startLockoutTimer(remainingMs);
@@ -214,7 +217,7 @@ function startLockoutTimer(duration) {
                         <div style="background: #f3f4f6; border-radius: 12px; padding: 20px; margin: 15px 0; border: 2px solid #e5e7eb;">
                             <p style="font-size: 14px; color: #6b7280; margin: 0 0 10px 0;">Account will be unlocked in:</p>
                             <p style="font-size: 32px; font-weight: bold; color: #dc2626; margin: 10px 0;">${minutes}:${seconds.toString().padStart(2, '0')}</p>
-                            <p style="font-size: 12px; color: #6b7280; margin: 0;">minutes</p>
+                            <p style="font-size: 12px; color: #6b7280; margin: 0;">${countdown < 60 ? 'seconds' : 'minutes'}</p>
                         </div>
                         <div style="background: #e5e7eb; border-radius: 8px; height: 8px; margin: 15px 0;">
                             <div style="background: #dc2626; height: 8px; border-radius: 8px; width: ${progressPercent}%; transition: width 1s ease;"></div>
@@ -241,7 +244,7 @@ function startLockoutTimer(duration) {
                 <div style="background: #f3f4f6; border-radius: 12px; padding: 20px; margin: 15px 0; border: 2px solid #e5e7eb;">
                     <p style="font-size: 14px; color: #6b7280; margin: 0 0 10px 0;">Account will be unlocked in:</p>
                     <p style="font-size: 32px; font-weight: bold; color: #dc2626; margin: 10px 0;">${Math.floor(countdown / 60)}:${(countdown % 60).toString().padStart(2, '0')}</p>
-                    <p style="font-size: 12px; color: #6b7280; margin: 0;">minutes</p>
+                    <p style="font-size: 12px; color: #6b7280; margin: 0;">${countdown < 60 ? 'seconds' : 'minutes'}</p>
                 </div>
                 <div style="background: #e5e7eb; border-radius: 8px; height: 8px; margin: 15px 0;">
                     <div style="background: #dc2626; height: 8px; border-radius: 8px; width: 100%;"></div>
@@ -296,19 +299,19 @@ window.handleFailedLogin = function() {
     
     if (failedAttempts >= 4) {
         // Trigger lockout
-        lockoutEndTime = Date.now() + (5 * 60 * 1000); // 5 minutes
+        lockoutEndTime = Date.now() + (60 * 1000); // 60 seconds
         localStorage.setItem('loginLockoutEndTime', lockoutEndTime.toString());
         
         Swal.fire({
             icon: 'error',
             title: 'Account Locked!',
-            text: 'Too many failed login attempts. Your account has been locked for 5 minutes.',
+            text: 'Too many failed login attempts. Your account has been locked for 60 seconds.',
             confirmButtonText: 'OK',
             timer: 3000,
             timerProgressBar: true
         });
         
-        startLockoutTimer(5 * 60 * 1000);
+        startLockoutTimer(60 * 1000);
     } else {
         const remainingAttempts = 4 - failedAttempts;
         

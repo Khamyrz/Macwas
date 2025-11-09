@@ -36,6 +36,7 @@
                         <div>
                             <label for="first_name" class="block text-xs font-medium text-gray-700 mb-1">First Name *</label>
                             <input id="first_name" type="text" name="first_name" value="{{ old('first_name') }}" required 
+                                   pattern="[A-Za-z\s]+" title="First name must contain only letters"
                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                             @error('first_name')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -46,6 +47,7 @@
                         <div>
                             <label for="last_name" class="block text-xs font-medium text-gray-700 mb-1">Last Name *</label>
                             <input id="last_name" type="text" name="last_name" value="{{ old('last_name') }}" required 
+                                   pattern="[A-Za-z\s]+" title="Last name must contain only letters"
                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                             @error('last_name')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -231,6 +233,18 @@ document.getElementById('photo').addEventListener('change', function() {
         alert('File size must be less than 2MB');
         this.value = '';
     }
+});
+
+// First Name validation - only allow letters and spaces
+document.getElementById('first_name').addEventListener('input', function(e) {
+    // Remove any non-letter characters (keep only letters and spaces)
+    this.value = this.value.replace(/[^A-Za-z\s]/g, '');
+});
+
+// Last Name validation - only allow letters and spaces
+document.getElementById('last_name').addEventListener('input', function(e) {
+    // Remove any non-letter characters (keep only letters and spaces)
+    this.value = this.value.replace(/[^A-Za-z\s]/g, '');
 });
 </script>
 @endsection

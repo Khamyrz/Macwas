@@ -41,10 +41,12 @@ class AuthenticatedSessionController extends Controller
         if ($email) {
             $lockoutUntil = LoginAttempt::isLockedOut($email, $ipAddress);
             if ($lockoutUntil) {
+                $remainingSeconds = max(0, now()->diffInSeconds($lockoutUntil, false));
                 $lockoutInfo = [
                     'locked' => true,
                     'until' => $lockoutUntil,
-                    'remaining_minutes' => now()->diffInMinutes($lockoutUntil, false)
+                    'remaining_minutes' => ceil($remainingSeconds / 60), // Convert to minutes for display
+                    'remaining_seconds' => $remainingSeconds
                 ];
             } else {
                 $remainingAttempts = LoginAttempt::getRemainingAttempts($email, $ipAddress);
@@ -87,8 +89,8 @@ class AuthenticatedSessionController extends Controller
                 LoginAttempt::recordFailedAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);
                 $remainingAttempts = LoginAttempt::getRemainingAttempts($email, $ipAddress);
                 if ($remainingAttempts <= 0) {
-                    LoginAttempt::setLockout($email, $ipAddress, 5, $latitude, $longitude);
-                    return redirect()->route('login')->with('error', 'Account locked due to too many failed attempts. Please try again in 5 minutes.')->onlyInput('email');
+                    LoginAttempt::setLockout($email, $ipAddress, 1, $latitude, $longitude);
+                    return redirect()->route('login')->with('error', 'Account locked due to too many failed attempts. Please try again in 60 seconds.')->onlyInput('email');
                 }
                 return redirect()->route('login')->with('error', 'Customer number not found.')->onlyInput('email');
             }
@@ -100,8 +102,12 @@ class AuthenticatedSessionController extends Controller
         // Check if account is locked out
         $lockoutUntil = LoginAttempt::isLockedOut($email, $ipAddress);
         if ($lockoutUntil) {
-            $remainingMinutes = now()->diffInMinutes($lockoutUntil, false);
-            return redirect()->route('login')->with('error', "Account is locked. Please try again in {$remainingMinutes} minutes.")->onlyInput('email');
+            $remainingSeconds = max(0, now()->diffInSeconds($lockoutUntil, false));
+            $remainingMinutes = ceil($remainingSeconds / 60);
+            if ($remainingSeconds < 60) {
+                return redirect()->route('login')->with('error', "Account is locked. Please try again in {$remainingSeconds} seconds.")->onlyInput('email');
+            }
+            return redirect()->route('login')->with('error', "Account is locked. Please try again in {$remainingMinutes} minute(s).")->onlyInput('email');
         }
 
         if (Auth::attempt(['email' => $email, 'password' => $password], $request->boolean('remember'))) {
@@ -216,8 +222,8 @@ class AuthenticatedSessionController extends Controller
         $remainingAttempts = LoginAttempt::getRemainingAttempts($email, $ipAddress);
         
         if ($remainingAttempts <= 0) {
-            LoginAttempt::setLockout($email, $ipAddress, 5, $latitude, $longitude);
-            return redirect()->route('login')->with('error', 'Account locked due to too many failed attempts. Please try again in 5 minutes.')->onlyInput('email');
+            LoginAttempt::setLockout($email, $ipAddress, 1, $latitude, $longitude);
+            return redirect()->route('login')->with('error', 'Account locked due to too many failed attempts. Please try again in 60 seconds.')->onlyInput('email');
         }
 
         return redirect()->route('login')->with('error', 'The provided credentials do not match our records.')->onlyInput('email');
