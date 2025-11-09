@@ -7,14 +7,7 @@
         <p class="text-gray-600">Generate monthly bills and review recent billing activity</p>
     </div>
 
-    <div class="bg-white rounded-lg shadow p-6 mb-8">
-        <form action="{{ route('admin.generate-monthly-bills') }}" method="POST" class="inline" onsubmit="return confirm('Generate bills for eligible customers for the current month?');">
-            @csrf
-            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                Generate Monthly Bills
-            </button>
-        </form>
-    </div>
+   
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <div class="bg-white rounded-lg shadow">
