@@ -75,7 +75,6 @@
                             <a href="{{ route('admin.user-records', 'accountant') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Accountant Records</a>
                             <div class="border-t my-2"></div>
                             <div class="text-xs text-gray-400 uppercase mb-2">Operations</div>
-                            <a href="{{ route('admin.operations') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Setup Requests & Pending Connections</a>
                             <a href="{{ route('admin.monthly-bills') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Monthly Bills</a>
                             <div class="border-t my-2"></div>
                             <div class="text-xs text-gray-400 uppercase mb-2">Security</div>
