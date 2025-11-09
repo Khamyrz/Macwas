@@ -113,49 +113,7 @@
 		</div>
 
 		<!-- Customers -->
-		<div class="bg-white rounded-lg shadow">
-			<div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-				<h2 class="text-lg font-medium text-gray-900">Customers (Pending)</h2>
-				<span class="text-sm text-gray-500">{{ $pendingCustomers->count() }} pending</span>
-			</div>
-			<div class="p-6">
-				@if($pendingCustomers->count() === 0)
-					<p class="text-gray-500">No pending customers.</p>
-				@else
-					<div class="overflow-x-auto">
-						<table class="min-w-full divide-y divide-gray-200">
-							<thead class="bg-gray-50">
-								<tr>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-								</tr>
-							</thead>
-							<tbody class="bg-white divide-y divide-gray-200">
-								@foreach($pendingCustomers as $user)
-									<tr>
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $user->full_name }}</td>
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $user->email }}</td>
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $user->phone_number }}</td>
-										<td class="px-6 py-4 whitespace-nowrap text-sm">
-											<form method="POST" action="{{ route('admin.approve-account', $user->id) }}" class="inline">
-												@csrf
-												<button type="submit" class="px-3 py-1 rounded bg-green-600 text-white text-xs hover:bg-green-700">Approve</button>
-											</form>
-											<form method="POST" action="{{ route('admin.reject-account', $user->id) }}" class="inline ml-2">
-												@csrf
-												<button type="submit" class="px-3 py-1 rounded bg-red-600 text-white text-xs hover:bg-red-700">Reject</button>
-											</form>
-										</td>
-									</tr>
-								@endforeach
-							</tbody>
-						</table>
-					</div>
-				@endif
-			</div>
-		</div>
+		
 	</div>
 </div>
 @endsection
