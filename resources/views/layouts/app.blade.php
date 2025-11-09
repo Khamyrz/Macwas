@@ -92,10 +92,6 @@
                             <a href="{{ route('customer.dashboard') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Dashboard</a>
                             <a href="{{ route('customer.recent-bills') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Recent Bills</a>
                             <a href="{{ route('customer.recent-payments') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Recent Payments</a>
-                            <a href="#" onclick="event.preventDefault(); document.getElementById('request-setup-form').submit();" class="block px-3 py-2 rounded hover:bg-gray-100">Request Water Setup</a>
-                            <form id="request-setup-form" method="POST" action="{{ route('customer.request-setup') }}" class="hidden">
-                                @csrf
-                            </form>
                             <div class="border-t my-2"></div>
                             <a href="{{ route('customer.bills') }}" class="block px-3 py-2 rounded hover:bg-gray-100">All Bills</a>
                             <a href="{{ route('customer.payment-history') }}" class="block px-3 py-2 rounded hover:bg-gray-100">All Payments</a>
