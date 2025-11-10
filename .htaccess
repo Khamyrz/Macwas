@@ -1,9 +1,10 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-
-    # Redirect all requests to the public folder
+    RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
+
+# Security rules
 <FilesMatch "^(\.env|\.git|composer\.json|artisan|server\.php|storage|vendor)">
     Order allow,deny
     Deny from all
