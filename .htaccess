@@ -1,22 +1,48 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
-    # Block direct access to /public/images/ paths - return 403 Forbidden
-    # This must come FIRST before any redirects
-    RewriteCond %{REQUEST_URI} ^/public/images/ [NC]
+    # ============================================
+    # SUPER SECURE: Block all /public/ path access
+    # ============================================
+    
+    # Block direct access to /public/index.php - return 403 Forbidden
+    RewriteCond %{REQUEST_URI} ^/public/index\.php$ [NC,OR]
+    RewriteCond %{THE_REQUEST} \s[^?]*/public/index\.php [NC]
     RewriteRule .* - [F,L]
     
-    # Also check THE_REQUEST header
+    # Block direct access to /public/images/ paths - return 403 Forbidden
+    RewriteCond %{REQUEST_URI} ^/public/images/ [NC,OR]
     RewriteCond %{THE_REQUEST} \s[^?]*/public/images/ [NC]
     RewriteRule .* - [F,L]
     
-    # Normal Laravel routing - redirect to public folder
+    # Block direct access to /public/ folder (except allowed asset folders)
+    # Allow: /public/css/, /public/js/, /public/build/ for Vite assets
+    # Block: /public/index.php, /public/images/, /public/storage/, etc.
+    RewriteCond %{REQUEST_URI} ^/public/ [NC]
+    RewriteCond %{REQUEST_URI} !^/public/(css|js|build|favicon\.ico|robots\.txt)/ [NC]
+    RewriteCond %{REQUEST_URI} !^/public/(css|js|build|favicon\.ico|robots\.txt)$ [NC]
+    RewriteRule .* - [F,L]
+    
+    # Normal Laravel routing - redirect to public folder (only for non-blocked paths)
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
 
-# Security rules
-<FilesMatch "^(\.env|\.git|composer\.json|artisan|server\.php|storage|vendor)">
+# ============================================
+# SUPER SECURE: Additional Security Rules
+# ============================================
+
+# Block access to sensitive files and folders
+<FilesMatch "^(\.env|\.git|composer\.json|artisan|server\.php|storage|vendor|\.htaccess|\.htpasswd)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block directory browsing
+Options -Indexes
+
+# Prevent access to hidden files
+<FilesMatch "^\.">
     Order allow,deny
     Deny from all
 </FilesMatch>

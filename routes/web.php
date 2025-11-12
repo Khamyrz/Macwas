@@ -11,10 +11,27 @@ use App\Models\SetupRequest;
 use Illuminate\Support\Facades\Route;
 
 
-// Block direct access to /public/images/ paths - return 403 Forbidden
+// ============================================
+// SUPER SECURE: Block all /public/ path access
+// ============================================
 // These routes must be at the top to catch requests before other routes
-Route::match(['get', 'post', 'head', 'options'], '/public/images/{path?}', function () {
+
+// Block direct access to /public/index.php - return 403 Forbidden
+Route::match(['get', 'post', 'head', 'options', 'put', 'delete', 'patch'], '/public/index.php', function () {
     abort(403, 'Forbidden');
+});
+
+// Block direct access to /public/images/ paths - return 403 Forbidden
+Route::match(['get', 'post', 'head', 'options', 'put', 'delete', 'patch'], '/public/images/{path?}', function () {
+    abort(403, 'Forbidden');
+})->where('path', '.*');
+
+// Block direct access to any /public/ paths (except allowed assets)
+Route::match(['get', 'post', 'head', 'options', 'put', 'delete', 'patch'], '/public/{path?}', function ($path = null) {
+    // Allow only css, js, build folders, favicon.ico, and robots.txt for assets
+    if (!preg_match('#^(css|js|build|favicon\.ico|robots\.txt)(/|$)#', $path)) {
+        abort(403, 'Forbidden');
+    }
 })->where('path', '.*');
 
 // Redirect root URL to welcome page

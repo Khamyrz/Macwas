@@ -5,19 +5,29 @@
 
     RewriteEngine On
 
+    # ============================================
+    # SUPER SECURE: Block all /public/ path access
+    # ============================================
+    
+    # Block direct access to /public/index.php - return 403 Forbidden
+    RewriteCond %{REQUEST_URI} ^/public/index\.php$ [NC,OR]
+    RewriteCond %{THE_REQUEST} \s[^?]*/public/index\.php [NC]
+    RewriteRule .* - [F,L]
+    
     # Block direct access to /public/images/ paths - return 403 Forbidden
-    # This must come BEFORE file serving rules
-    # This catches requests when document root is project root
-    RewriteCond %{REQUEST_URI} ^/public/images/ [NC]
-    RewriteRule .* - [F,L]
-    
-    # Also check THE_REQUEST header for /public/images/ pattern
-    RewriteCond %{THE_REQUEST} \s[^?]*/public/images/ [NC]
-    RewriteRule .* - [F,L]
-    
-    # Block if accessing images folder directly via /public/images/ URL pattern
+    # Multiple checks to ensure maximum security
+    RewriteCond %{REQUEST_URI} ^/public/images/ [NC,OR]
+    RewriteCond %{THE_REQUEST} \s[^?]*/public/images/ [NC,OR]
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteCond %{REQUEST_URI} ^/public/images/ [NC]
+    RewriteRule .* - [F,L]
+    
+    # Additional security: Block any remaining /public/ path access attempts
+    # This catches any edge cases
+    RewriteCond %{ENV:REDIRECT_STATUS} ^$
+    RewriteCond %{REQUEST_URI} ^/public/ [NC]
+    RewriteCond %{REQUEST_URI} !^/public/(css|js|build|favicon\.ico|robots\.txt)/ [NC]
+    RewriteCond %{REQUEST_URI} !^/public/(css|js|build|favicon\.ico|robots\.txt)$ [NC]
     RewriteRule .* - [F,L]
 
     # Handle Authorization Header
@@ -38,3 +48,22 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# ============================================
+# SUPER SECURE: Additional Security Rules
+# ============================================
+
+# Block directory browsing
+Options -Indexes
+
+# Prevent access to sensitive files
+<FilesMatch "^(\.env|\.git|composer\.json|artisan|\.htaccess|\.htpasswd)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block access to hidden files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
