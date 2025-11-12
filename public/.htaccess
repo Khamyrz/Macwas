@@ -18,18 +18,6 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # Block direct access to /public/ paths - redirect to 500 error route
-    RewriteCond %{REQUEST_URI} ^/public/ [NC]
-    RewriteRule .* /server-error-500 [R=302,L]
-    
-    # Block direct access to /public/images/logo.png - redirect to 500 error route
-    RewriteCond %{REQUEST_URI} ^/public/images/logo\.png$ [NC]
-    RewriteRule .* /server-error-500 [R=302,L]
-    
-    # Block direct access to any /public/images/ paths - redirect to 500 error route
-    RewriteCond %{REQUEST_URI} ^/public/images/ [NC]
-    RewriteRule .* /server-error-500 [R=302,L]
-
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f

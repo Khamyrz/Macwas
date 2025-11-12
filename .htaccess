@@ -1,18 +1,7 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
-    # Block direct access to /public/ paths - redirect to 500 error route
-    RewriteCond %{REQUEST_URI} ^/public/ [NC]
-    RewriteRule .* /server-error-500 [R=302,L]
-    
-    # Block direct access to /public/images/logo.png - redirect to 500 error route
-    RewriteCond %{REQUEST_URI} ^/public/images/logo\.png$ [NC]
-    RewriteRule .* /server-error-500 [R=302,L]
-    
-    # Block direct access to any /public/images/ paths - redirect to 500 error route
-    RewriteCond %{REQUEST_URI} ^/public/images/ [NC]
-    RewriteRule .* /server-error-500 [R=302,L]
-    
+    # Normal Laravel routing - redirect to public folder
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
