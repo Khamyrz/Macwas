@@ -11,6 +11,25 @@ use App\Models\SetupRequest;
 use Illuminate\Support\Facades\Route;
 
 
+// Block direct access to public assets - return 500 error
+// These routes must be at the top to catch requests before other routes
+Route::get('/public/{path?}', function () {
+    abort(500, 'Server Error');
+})->where('path', '.*');
+
+Route::get('/public/images/{path?}', function () {
+    abort(500, 'Server Error');
+})->where('path', '.*');
+
+Route::get('/public/images/logo.png', function () {
+    abort(500, 'Server Error');
+});
+
+// Route for .htaccess redirects to return 500 error
+Route::get('/server-error-500', function () {
+    abort(500, 'Server Error');
+});
+
 // Redirect root URL to welcome page
 Route::get('/', function () {
     return view('auth.welcome');
