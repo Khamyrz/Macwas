@@ -1,2 +1,17 @@
 User-agent: *
-Disallow:
+# Disallow public assets and images from being indexed
+Disallow: /public/
+Disallow: /public/images/
+Disallow: /public/images/logo.png
+Disallow: /storage/
+Disallow: /vendor/
+
+# Allow only user-facing pages
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /dashboard
+Allow: /admin/
+Allow: /accountant/
+Allow: /plumber/
+Allow: /customer/

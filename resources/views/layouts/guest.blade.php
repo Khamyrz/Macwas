@@ -4,6 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- SEO Meta Tags -->
+    @if(request()->is('public/*') || request()->is('storage/*') || request()->is('vendor/*') || request()->is('images/*'))
+        <meta name="robots" content="noindex, nofollow" />
+    @else
+        <meta name="robots" content="index, follow" />
+    @endif
 
     <title>{{ config('app.name', 'Macwas') }}</title>
 
@@ -33,6 +40,9 @@
     </header>
 
     @yield('content')
+    
+    <!-- Cookie Consent -->
+    @include('components.cookie-consent')
     
     <!-- Sweet Alert Messages -->
     <script>
