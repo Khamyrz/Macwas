@@ -547,7 +547,7 @@ document.addEventListener('DOMContentLoaded', function() {
     @endif
 
     // Handle validation errors
-    @if($errors->any())
+    @if(isset($errors) && $errors->any())
         Swal.fire({
             icon: 'error',
             title: 'Validation Error',
@@ -630,7 +630,7 @@ function showOtpModal() {
 }
 
 function verifyOtp(otpCode) {
-    return fetch('{{ route("otp.verify") }}', {
+    return fetch('{{ route("otp.verify.post") }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
