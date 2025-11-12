@@ -38,7 +38,7 @@
     @yield('content')
     
     <!-- Cookie Consent -->
-    @include('components.cookie-consent')
+    @includeIf('components.cookie-consent')
     
     <!-- Sweet Alert Messages -->
     <script>

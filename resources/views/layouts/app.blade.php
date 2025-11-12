@@ -30,15 +30,18 @@
                             <div class="relative">
                                 <button class="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition duration-150 ease-in-out">
                                     <div class="flex items-center">
-                                        @if(auth()->user()->photo)
-                                            <img class="h-8 w-8 rounded-full" src="{{ Storage::url(auth()->user()->photo) }}" alt="">
+                                        @php
+                                            $user = auth()->user();
+                                        @endphp
+                                        @if($user && $user->photo)
+                                            <img class="h-8 w-8 rounded-full" src="{{ \Illuminate\Support\Facades\Storage::url($user->photo) }}" alt="">
                                         @else
                                             <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                                                <span class="text-gray-600 font-medium text-sm">{{ substr(auth()->user()->first_name, 0, 1) }}{{ substr(auth()->user()->last_name, 0, 1) }}</span>
+                                                <span class="text-gray-600 font-medium text-sm">{{ $user ? substr($user->first_name ?? '', 0, 1) . substr($user->last_name ?? '', 0, 1) : 'U' }}</span>
                                             </div>
                                         @endif
-                                        <span class="ml-2">{{ auth()->user()->full_name }}</span>
-                                        <span class="ml-2 text-xs text-gray-400">({{ ucfirst(auth()->user()->role) }})</span>
+                                        <span class="ml-2">{{ $user ? $user->full_name : 'User' }}</span>
+                                        <span class="ml-2 text-xs text-gray-400">({{ $user ? ucfirst($user->role) : 'Guest' }})</span>
                                     </div>
                                 </button>
                             </div>
@@ -62,11 +65,14 @@
         <div class="flex">
             <!-- Sidebar -->
             @auth
+            @php
+                $currentUser = auth()->user();
+            @endphp
             <aside class="w-64 bg-white border-r min-h-screen hidden md:block">
                 <div class="p-4">
                     <div class="text-xs text-gray-400 uppercase mb-2">Navigation</div>
                     <nav class="space-y-1">
-                        @if(auth()->user()->isAdmin())
+                        @if($currentUser && $currentUser->isAdmin())
                             <a href="{{ route('admin.dashboard') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Dashboard</a>
                             <a href="{{ route('admin.pending-accounts') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Pending Accounts</a>
                             <a href="{{ route('admin.water-rates') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Water Rates</a>
@@ -84,13 +90,13 @@
                             <a href="{{ route('admin.monitoring') }}" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->routeIs('admin.monitoring*') ? 'bg-blue-100 text-blue-700' : '' }}">
                                 <i class="fas fa-shield-alt mr-2"></i>Security Monitoring
                             </a>
-                        @elseif(auth()->user()->isAccountant())
+                        @elseif($currentUser && $currentUser->isAccountant())
                             <a href="{{ route('accountant.dashboard') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Dashboard</a>
                             <a href="{{ route('accountant.payment-history') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Payment History</a>
-                        @elseif(auth()->user()->isPlumber())
+                        @elseif($currentUser && $currentUser->isPlumber())
                             <a href="{{ route('plumber.dashboard') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Dashboard</a>
                             <a href="{{ route('plumber.customer-history') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Customer History</a>
-                        @elseif(auth()->user()->isCustomer())
+                        @elseif($currentUser && $currentUser->isCustomer())
                             <a href="{{ route('customer.dashboard') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Dashboard</a>
                             <a href="{{ route('customer.recent-bills') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Recent Bills</a>
                             <a href="{{ route('customer.recent-payments') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Recent Payments</a>
@@ -128,7 +134,7 @@
     </div>
     
     <!-- Cookie Consent -->
-    @include('components.cookie-consent')
+    @includeIf('components.cookie-consent')
     
     @stack('scripts')
 </body>
