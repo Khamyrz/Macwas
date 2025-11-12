@@ -84,7 +84,7 @@ class OtpVerificationController extends Controller
         $userId = $request->session()->get('otp_user_id');
         $redirectRoute = $request->session()->get('otp_redirect_route');
 
-        if (!$userId || !$redirectRoute) {
+        if (!$userId) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'Session expired. Please login again.'], 400);
             }
@@ -123,6 +123,11 @@ class OtpVerificationController extends Controller
             $user->update(['email_verified_at' => now()]);
         }
 
+        // Determine redirect route based on user role (use session route if available, otherwise determine from role)
+        if (!$redirectRoute) {
+            $redirectRoute = $this->getRedirectRoute($user->role);
+        }
+
         // Regenerate session to prevent CSRF issues
         $request->session()->regenerate();
 
@@ -131,13 +136,11 @@ class OtpVerificationController extends Controller
             Auth::login($user);
         }
 
-        // Ensure redirect route is set based on user role if not in session
-        if (!$redirectRoute) {
-            $redirectRoute = $this->getRedirectRoute($user->role);
-        }
-
         // Clear OTP session data
         $request->session()->forget(['otp_user_id', 'otp_redirect_route', 'otp_required']);
+
+        // Refresh user to ensure we have latest data
+        $user->refresh();
 
         // For AJAX requests (modal), return JSON with redirect URL
         if ($request->ajax() || $request->wantsJson()) {
@@ -148,8 +151,8 @@ class OtpVerificationController extends Controller
             ]);
         }
 
-        // Redirect to the intended route
-        return redirect($redirectRoute)->with('success', 'OTP verified successfully!');
+        // Redirect to the intended route - use redirect()->to() to ensure absolute URL
+        return redirect()->to($redirectRoute)->with('success', 'OTP verified successfully!');
     }
 
     /**

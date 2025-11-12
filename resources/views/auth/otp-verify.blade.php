@@ -27,7 +27,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('otp.verify') }}" class="space-y-4" id="otpForm">
+        <form method="POST" action="{{ route('otp.verify.post') }}" class="space-y-4" id="otpForm">
             @csrf
             
             <!-- OTP Code Field -->

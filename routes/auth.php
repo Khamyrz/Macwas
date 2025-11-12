@@ -25,6 +25,12 @@ Route::middleware('guest')->group(function () {
     // OTP Verification Routes (for guest users)
     Route::get('otp-verify', [App\Http\Controllers\OtpVerificationController::class, 'show'])
                 ->name('otp.verify');
+    
+    Route::post('otp-verify', [App\Http\Controllers\OtpVerificationController::class, 'verify'])
+                ->name('otp.verify.post');
+    
+    Route::post('otp-resend', [App\Http\Controllers\OtpVerificationController::class, 'resend'])
+                ->name('otp.resend');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
                 ->name('password.request');
@@ -50,13 +56,6 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    // OTP Verification Routes (for authenticated users - modal)
-    Route::post('otp-verify', [App\Http\Controllers\OtpVerificationController::class, 'verify'])
-                ->name('otp.verify');
-
-    Route::post('otp-resend', [App\Http\Controllers\OtpVerificationController::class, 'resend'])
-                ->name('otp.resend');
-
     Route::get('verify-email', [EmailVerificationPromptController::class, '__invoke'])
                 ->name('verification.notice');
 
