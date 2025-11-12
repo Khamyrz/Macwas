@@ -11,16 +11,11 @@ use App\Models\SetupRequest;
 use Illuminate\Support\Facades\Route;
 
 
-// Block direct access to /public/images/ paths - return 500 error
+// Block direct access to /public/images/ paths - return 403 Forbidden
 // These routes must be at the top to catch requests before other routes
-Route::get('/public/images/{path?}', function () {
-    return response()->view('errors.500', [], 500);
+Route::match(['get', 'post', 'head', 'options'], '/public/images/{path?}', function () {
+    abort(403, 'Forbidden');
 })->where('path', '.*');
-
-// Route for .htaccess redirects to return 500 error
-Route::get('/server-error-500', function () {
-    return response()->view('errors.500', [], 500);
-});
 
 // Redirect root URL to welcome page
 Route::get('/', function () {

@@ -1,0 +1,12 @@
+# Block all direct access to images folder - return 403 Forbidden
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# Alternative method if mod_rewrite is not available
+<FilesMatch ".*">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+

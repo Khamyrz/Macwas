@@ -5,6 +5,21 @@
 
     RewriteEngine On
 
+    # Block direct access to /public/images/ paths - return 403 Forbidden
+    # This must come BEFORE file serving rules
+    # This catches requests when document root is project root
+    RewriteCond %{REQUEST_URI} ^/public/images/ [NC]
+    RewriteRule .* - [F,L]
+    
+    # Also check THE_REQUEST header for /public/images/ pattern
+    RewriteCond %{THE_REQUEST} \s[^?]*/public/images/ [NC]
+    RewriteRule .* - [F,L]
+    
+    # Block if accessing images folder directly via /public/images/ URL pattern
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteCond %{REQUEST_URI} ^/public/images/ [NC]
+    RewriteRule .* - [F,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

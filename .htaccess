@@ -1,6 +1,15 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
+    # Block direct access to /public/images/ paths - return 403 Forbidden
+    # This must come FIRST before any redirects
+    RewriteCond %{REQUEST_URI} ^/public/images/ [NC]
+    RewriteRule .* - [F,L]
+    
+    # Also check THE_REQUEST header
+    RewriteCond %{THE_REQUEST} \s[^?]*/public/images/ [NC]
+    RewriteRule .* - [F,L]
+    
     # Normal Laravel routing - redirect to public folder
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L]
