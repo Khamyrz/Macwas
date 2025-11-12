@@ -33,11 +33,19 @@
 		<div class="grid grid-cols-2 gap-4">
 			<div>
 				<label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-				<input type="text" name="first_name" required class="w-full border px-3 py-2 rounded">
+				<input type="text" name="first_name" required pattern="[a-zA-Z\s]+" title="Only letters and spaces are allowed. Numbers are not permitted." class="w-full border px-3 py-2 rounded @error('first_name') border-red-500 @enderror" value="{{ old('first_name') }}">
+				@error('first_name')
+					<p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+				@enderror
+				<p class="text-xs text-gray-500 mt-1">Letters and spaces only (no numbers)</p>
 			</div>
 			<div>
 				<label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-				<input type="text" name="last_name" required class="w-full border px-3 py-2 rounded">
+				<input type="text" name="last_name" required pattern="[a-zA-Z\s]+" title="Only letters and spaces are allowed. Numbers are not permitted." class="w-full border px-3 py-2 rounded @error('last_name') border-red-500 @enderror" value="{{ old('last_name') }}">
+				@error('last_name')
+					<p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+				@enderror
+				<p class="text-xs text-gray-500 mt-1">Letters and spaces only (no numbers)</p>
 			</div>
 		</div>
 		<div>
@@ -60,7 +68,11 @@
 		</div>
 		<div>
 			<label class="block text-sm font-medium text-gray-700 mb-1">Temporary Password</label>
-			<input type="text" name="password" required class="w-full border px-3 py-2 rounded">
+			<input type="password" name="password" required minlength="8" class="w-full border px-3 py-2 rounded @error('password') border-red-500 @enderror" value="{{ old('password') }}">
+			@error('password')
+				<p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+			@enderror
+			<p class="text-xs text-gray-500 mt-1">Must be at least 8 characters with at least one uppercase letter and one special character</p>
 		</div>
 		<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
 			<p class="text-sm text-blue-800">

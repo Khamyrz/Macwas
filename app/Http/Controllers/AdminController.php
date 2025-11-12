@@ -318,14 +318,27 @@ class AdminController extends Controller
     {
         $request->validate([
             'role' => 'required|in:customer,plumber,accountant',
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
+            'first_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'not_regex:/[0-9]/'],
+            'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'not_regex:/[0-9]/'],
             'email' => 'required|email|unique:users,email',
             'age' => 'required|integer|min:18|max:120',
             'address' => 'required|string|max:500',
             'phone_number' => 'required|string|max:20',
-            'password' => 'required|string|min:6',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'regex:/[A-Z]/', // Must contain at least one uppercase letter
+                'regex:/[^a-zA-Z0-9]/', // Must contain at least one special character (non-alphanumeric)
+            ],
             'assigned_plumber_id' => 'nullable|exists:users,id',
+        ], [
+            'first_name.regex' => 'First name must contain only letters and spaces.',
+            'first_name.not_regex' => 'First name cannot contain numbers.',
+            'last_name.regex' => 'Last name must contain only letters and spaces.',
+            'last_name.not_regex' => 'Last name cannot contain numbers.',
+            'password.regex' => 'Password must contain at least one uppercase letter and one special character.',
+            'password.min' => 'Password must be at least 8 characters long.',
         ]);
 
         $userData = [
@@ -451,13 +464,26 @@ class AdminController extends Controller
         $user = User::findOrFail($id);
         
         $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
+            'first_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'not_regex:/[0-9]/'],
+            'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'not_regex:/[0-9]/'],
             'email' => 'required|email|unique:users,email,' . $id,
             'phone_number' => 'required|string|max:20',
             'address' => 'required|string|max:500',
             'status' => 'required|in:active,pending,inactive',
-            'password' => 'nullable|string|min:6',
+            'password' => [
+                'nullable',
+                'string',
+                'min:8',
+                'regex:/[A-Z]/', // Must contain at least one uppercase letter
+                'regex:/[^a-zA-Z0-9]/', // Must contain at least one special character (non-alphanumeric)
+            ],
+        ], [
+            'first_name.regex' => 'First name must contain only letters and spaces.',
+            'first_name.not_regex' => 'First name cannot contain numbers.',
+            'last_name.regex' => 'Last name must contain only letters and spaces.',
+            'last_name.not_regex' => 'Last name cannot contain numbers.',
+            'password.regex' => 'Password must contain at least one uppercase letter and one special character.',
+            'password.min' => 'Password must be at least 8 characters long.',
         ]);
 
         $updateData = [
