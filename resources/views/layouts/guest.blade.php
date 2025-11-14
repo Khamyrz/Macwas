@@ -1,3 +1,15 @@
+@php
+    $shouldSetPolicyCookie = !request()->cookies->has('macwas_cookie_policy');
+    if ($shouldSetPolicyCookie && !headers_sent()) {
+        setcookie('macwas_cookie_policy', 'pending', [
+            'expires' => time() + 31536000,
+            'path' => '/',
+            'secure' => request()->isSecure(),
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>

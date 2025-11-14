@@ -133,39 +133,50 @@ class AuthenticatedSessionController extends Controller
                 session()->flash('warning', 'Role corrected to '.ucfirst($user->role).'.');
             }
 
+            $otpRoles = ['plumber', 'accountant'];
+
             // Always require OTP verification for Plumber and Accountant on every login
-            if (in_array($user->role, ['plumber', 'accountant'])) {
-                // Generate OTP for plumber/accountant login verification
-                $otp = OtpVerification::generateOtp($user->id, 'login');
-                
+            if (in_array($user->role, $otpRoles)) {
+                $requiresEmailVerification = is_null($user->email_verified_at);
+                $otpType = $requiresEmailVerification ? 'activation' : 'login';
+
+                $otp = OtpVerification::generateOtp($user->id, $otpType);
+
                 try {
-                    Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, 'login'));
+                    Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, $otpType));
                 } catch (\Exception $e) {
                     \Log::error('Failed to send OTP email: ' . $e->getMessage());
                 }
 
-                // Store user ID and redirect route in session for OTP verification
                 $request->session()->put('otp_user_id', $user->id);
                 $request->session()->put('otp_redirect_route', $this->getRedirectRoute($user->role));
                 $request->session()->put('otp_required', true);
-                
-                // Regenerate session to ensure fresh CSRF token
-                $request->session()->regenerate();
-                
-                // Keep user logged in but show OTP modal on login page before redirecting
-                // Don't redirect to dashboard yet - show OTP modal first
-                return redirect()->route('login')->with('otp_required', true)->with('success', 'An OTP has been sent to your email. Please verify to continue.');
+                $request->session()->put('otp_flow', $requiresEmailVerification ? 'page' : 'modal');
+                $request->session()->put('otp_type', $otpType);
+
+                if ($requiresEmailVerification) {
+                    Auth::logout();
+
+                    return redirect()
+                        ->route('otp.verify')
+                        ->with('success', 'We sent a verification code to your email. Enter the OTP to activate your account.');
+                }
+
+                return redirect()
+                    ->route('login')
+                    ->with('otp_required', true)
+                    ->with('success', 'Enter the OTP we sent to your email to finish signing in.');
             }
 
             // Check if user needs verification (exclude admin users and roles already handled above)
-            if (!$user->isAdmin() && !in_array($user->role, ['plumber', 'accountant'])) {
+            if (!$user->isAdmin() && !in_array($user->role, $otpRoles)) {
                 // Check if this is an admin-created account that needs OTP verification
                 if ($user->admin_created && $user->email_verified_at === null) {
                     // Generate OTP for admin-created account verification
-                    $otp = OtpVerification::generateOtp($user->id, 'login');
+                    $otp = OtpVerification::generateOtp($user->id, 'activation');
                     
                     try {
-                        Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, 'login'));
+                        Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, 'activation'));
                     } catch (\Exception $e) {
                         \Log::error('Failed to send OTP email: ' . $e->getMessage());
                     }
@@ -173,6 +184,7 @@ class AuthenticatedSessionController extends Controller
                     // Store user ID in session for OTP verification
                     $request->session()->put('otp_user_id', $user->id);
                     $request->session()->put('otp_redirect_route', $this->getRedirectRoute($user->role));
+                    $request->session()->put('otp_type', 'activation');
                     
                     // Regenerate session to ensure fresh CSRF token
                     $request->session()->regenerate();
@@ -184,10 +196,10 @@ class AuthenticatedSessionController extends Controller
                 // Check if this is a self-registered user that needs email verification
                 else if (!$user->admin_created && $user->email_verified_at === null) {
                     // Use OTP verification for self-registered users after admin approval
-                    $otp = OtpVerification::generateOtp($user->id, 'login');
+                    $otp = OtpVerification::generateOtp($user->id, 'activation');
 
                     try {
-                        Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, 'login'));
+                        Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, 'activation'));
                     } catch (\Exception $e) {
                         \Log::error('Failed to send OTP email: ' . $e->getMessage());
                     }
@@ -195,6 +207,7 @@ class AuthenticatedSessionController extends Controller
                     // Prepare OTP session details
                     $request->session()->put('otp_user_id', $user->id);
                     $request->session()->put('otp_redirect_route', $this->getRedirectRoute($user->role));
+                     $request->session()->put('otp_type', 'activation');
 
                     // Regenerate session and require OTP before continuing
                     $request->session()->regenerate();

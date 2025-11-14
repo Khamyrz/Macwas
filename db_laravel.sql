@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 29, 2025 at 07:22 AM
+-- Generation Time: Nov 14, 2025 at 03:41 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -43,6 +43,24 @@ CREATE TABLE `cache_locks` (
   `key` varchar(255) NOT NULL,
   `owner` varchar(255) NOT NULL,
   `expiration` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `cookies`
+--
+
+CREATE TABLE `cookies` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `display_name` varchar(255) NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `duration` varchar(255) NOT NULL,
+  `is_required` tinyint(1) NOT NULL DEFAULT 0,
+  `purpose` text NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -170,7 +188,15 @@ INSERT INTO `login_attempts` (`id`, `email`, `ip_address`, `user_agent`, `latitu
 (29, 'jkr.grande@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', 11.2891824, 123.7230663, 1, '2025-10-28 22:05:11', NULL, '2025-10-28 22:05:11', '2025-10-28 22:05:11'),
 (30, 'jkr.grande@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', 11.2893535, 123.7232475, 1, '2025-10-28 22:06:39', NULL, '2025-10-28 22:06:39', '2025-10-28 22:06:39'),
 (31, 'jkr.grande@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', 11.2893520, 123.7232418, 1, '2025-10-28 22:09:43', NULL, '2025-10-28 22:09:43', '2025-10-28 22:09:43'),
-(33, 'jkr.grande@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', 11.2893520, 123.7232418, 1, '2025-10-28 22:10:33', NULL, '2025-10-28 22:10:33', '2025-10-28 22:10:33');
+(33, 'jkr.grande@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', 11.2893520, 123.7232418, 1, '2025-10-28 22:10:33', NULL, '2025-10-28 22:10:33', '2025-10-28 22:10:33'),
+(34, 'macwas@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', NULL, NULL, 1, '2025-11-08 04:21:12', NULL, '2025-11-08 04:21:12', '2025-11-08 04:21:12'),
+(36, 'macwas@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', 11.2966321, 123.7318004, 1, '2025-11-13 03:45:04', NULL, '2025-11-13 03:45:04', '2025-11-13 03:45:04'),
+(37, 'khamyrbautista@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', 11.2966321, 123.7318004, 1, '2025-11-13 03:45:33', NULL, '2025-11-13 03:45:33', '2025-11-13 03:45:33'),
+(38, 'macwas@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', 11.2966123, 123.7316290, 1, '2025-11-13 03:49:30', NULL, '2025-11-13 03:49:30', '2025-11-13 03:49:30'),
+(39, 'konihiba10@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', 11.2968088, 123.7316844, 1, '2025-11-13 03:57:09', NULL, '2025-11-13 03:57:09', '2025-11-13 03:57:09'),
+(40, 'darth.khamyr@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', NULL, NULL, 1, '2025-11-13 05:05:01', NULL, '2025-11-13 05:05:01', '2025-11-13 05:05:01'),
+(41, 'darth.khamyr@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', 11.2956412, 123.7278260, 1, '2025-11-13 05:05:34', NULL, '2025-11-13 05:05:34', '2025-11-13 05:05:34'),
+(42, 'macwas@gmail.com', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', 11.2956874, 123.7278729, 1, '2025-11-13 05:21:53', NULL, '2025-11-13 05:21:53', '2025-11-13 05:21:53');
 
 -- --------------------------------------------------------
 
@@ -232,7 +258,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (35, '2025_10_29_040420_add_user_agent_to_login_attempts_table', 10),
 (36, '2025_10_29_041155_rename_successful_to_success_in_login_attempts_table', 11),
 (37, '2025_10_29_120000_add_lat_lng_to_login_attempts_table', 12),
-(38, '2025_10_29_045742_add_admin_created_to_users_table', 13);
+(38, '2025_10_29_045742_add_admin_created_to_users_table', 13),
+(39, '2025_11_13_000000_create_cookies_table', 14);
 
 -- --------------------------------------------------------
 
@@ -283,7 +310,13 @@ INSERT INTO `otp_verifications` (`id`, `user_id`, `otp_code`, `expires_at`, `is_
 (1, 4, '645127', '2025-10-26 09:06:28', 1, 'login', '2025-10-26 01:05:47', '2025-10-26 01:06:28'),
 (2, 4, '395245', '2025-10-26 01:16:28', 0, 'login', '2025-10-26 01:06:28', '2025-10-26 01:06:28'),
 (9, 16, '781404', '2025-10-29 05:48:56', 1, 'login', '2025-10-28 21:46:28', '2025-10-28 21:48:56'),
-(10, 16, '464125', '2025-10-29 05:49:31', 1, 'login', '2025-10-28 21:48:56', '2025-10-28 21:49:31');
+(10, 16, '464125', '2025-10-29 05:49:31', 1, 'login', '2025-10-28 21:48:56', '2025-10-28 21:49:31'),
+(13, 21, '898226', '2025-11-13 11:57:09', 1, 'login', '2025-11-13 03:55:45', '2025-11-13 03:57:09'),
+(14, 21, '982313', '2025-11-13 04:07:09', 0, 'login', '2025-11-13 03:57:09', '2025-11-13 03:57:09'),
+(15, 22, '187721', '2025-11-13 13:05:34', 1, 'login', '2025-11-13 05:04:20', '2025-11-13 05:05:34'),
+(16, 22, '151964', '2025-11-13 13:05:18', 1, 'activation', '2025-11-13 05:05:01', '2025-11-13 05:05:18'),
+(17, 22, '672508', '2025-11-13 13:06:16', 1, 'login', '2025-11-13 05:05:34', '2025-11-13 05:06:16'),
+(18, 23, '916230', '2025-11-13 05:33:03', 0, 'login', '2025-11-13 05:23:03', '2025-11-13 05:23:03');
 
 -- --------------------------------------------------------
 
@@ -387,8 +420,11 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `customer_number`, `first_name`, `last_name`, `email`, `email_verified_at`, `admin_created`, `password`, `plain_password`, `role`, `age`, `phone_number`, `photo`, `national_id`, `address`, `status`, `is_available`, `remember_token`, `created_at`, `updated_at`) VALUES
-(4, '2025-0001', 'Admin', 'User', 'macwas@gmail.com', NULL, 0, '$2y$12$DteaXhwF.aSgZUzWCHrpBep4hZ/CiOF6s3W16D/N89zPEbL9B69f2', NULL, 'admin', 18, 'N/A', NULL, 'ADMIN-68d920db583b6', 'N/A', 'active', 1, 'rqTCJr9ac0vMqa94uYdd7Cz88CiIs6uasrFLQg8ynur8y7pIfJhMP4EDfQdL', '2025-09-28 03:49:47', '2025-09-28 03:49:47'),
-(16, '2025-0002', 'Khamyr', 'Araño', 'khamyrbautista@gmail.com', '2025-10-28 21:49:31', 1, '$2y$12$4jXVjZQt7ojuGr0SZFt7t.sIrA18SX2XndYU51fTUqfDCBtp/aLpa', 'Deadmen13', 'customer', 23, '5465434634', NULL, 'AUTO-6901aa345e9d1', 'dsfadsfas', 'active', 0, NULL, '2025-10-28 21:46:28', '2025-10-28 21:49:31');
+(4, '2025-0001', 'Admin', 'User', 'macwas@gmail.com', NULL, 0, '$2y$12$DteaXhwF.aSgZUzWCHrpBep4hZ/CiOF6s3W16D/N89zPEbL9B69f2', NULL, 'admin', 18, 'N/A', NULL, 'ADMIN-68d920db583b6', 'N/A', 'active', 1, 'gQetU7Ku7KmPXzWcBU3J8cQDD4MCkP9w8D3ur9DW1Rf3pczZaS2H8ain4Snq', '2025-09-28 03:49:47', '2025-09-28 03:49:47'),
+(16, '2025-0002', 'Khamyr', 'Araño', 'khamyrbautista@gmail.com', '2025-10-28 21:49:31', 1, '$2y$12$4jXVjZQt7ojuGr0SZFt7t.sIrA18SX2XndYU51fTUqfDCBtp/aLpa', 'Deadmen13', 'customer', 23, '5465434634', NULL, 'AUTO-6901aa345e9d1', 'dsfadsfas', 'active', 0, 'HCEVmleT52phtAQzT6HS7GYOTHHZA60RWKThiBJOF06jlQ6i6fclHUXc6az2', '2025-10-28 21:46:28', '2025-10-28 21:49:31'),
+(21, NULL, 'Joshua', 'Raden', 'konihiba10@gmail.com', NULL, 1, '$2y$12$VQ4PHcV0aB3igX307ZLTkOqN81I99lfD9y2ulyAA8QBZXxpxkuXQ.', 'De@dmen22', 'accountant', 24, '09823473743', NULL, 'AUTO-6915c740f0d4e', 'tarong, madidejos, cebu', 'active', 0, 'uv9r4WNQV5QkUMsbxKKgL5WygcTFmqSrzoymteVAdrDQ1rmJyczujeWVfQJB', '2025-11-13 03:55:44', '2025-11-13 03:55:44'),
+(22, NULL, 'Khamyr', 'Arano', 'darth.khamyr@gmail.com', '2025-11-13 05:05:18', 1, '$2y$12$P2CefvYoBuOUzbcjq.dhzOtYrqMVgOtH1CcUciHLQBcJ.QIUMwW76', 'De@dmen22', 'accountant', 23, '04358438543', NULL, 'AUTO-6915d754e100e', 'dgjksgjfdjgfd', 'active', 0, NULL, '2025-11-13 05:04:20', '2025-11-13 05:05:18'),
+(23, NULL, 'John Kenneth', 'Grande', 'annamaeeben09@gmail.com', NULL, 1, '$2y$12$MyxgEhfiWXUFnq2C38j2..o4BzCTnCxLoIyi3Xhqz59xsgxmLYAE6', 'De@dmen22', 'plumber', 23, '45654645654', NULL, 'AUTO-6915dbb73cb35', 'tarong, madidejos, cebu', 'active', 1, NULL, '2025-11-13 05:23:03', '2025-11-13 05:23:03');
 
 -- --------------------------------------------------------
 
@@ -465,6 +501,13 @@ ALTER TABLE `cache`
 --
 ALTER TABLE `cache_locks`
   ADD PRIMARY KEY (`key`);
+
+--
+-- Indexes for table `cookies`
+--
+ALTER TABLE `cookies`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `cookies_name_unique` (`name`);
 
 --
 -- Indexes for table `disconnection_requests`
@@ -596,6 +639,12 @@ ALTER TABLE `water_rates`
 --
 
 --
+-- AUTO_INCREMENT for table `cookies`
+--
+ALTER TABLE `cookies`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `disconnection_requests`
 --
 ALTER TABLE `disconnection_requests`
@@ -617,7 +666,7 @@ ALTER TABLE `jobs`
 -- AUTO_INCREMENT for table `login_attempts`
 --
 ALTER TABLE `login_attempts`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT for table `meter_readings`
@@ -629,13 +678,13 @@ ALTER TABLE `meter_readings`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT for table `otp_verifications`
 --
 ALTER TABLE `otp_verifications`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `payments`
@@ -653,7 +702,7 @@ ALTER TABLE `setup_requests`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `water_bills`

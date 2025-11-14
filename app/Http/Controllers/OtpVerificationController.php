@@ -83,6 +83,7 @@ class OtpVerificationController extends Controller
 
         $userId = $request->session()->get('otp_user_id');
         $redirectRoute = $request->session()->get('otp_redirect_route');
+        $otpType = $request->session()->get('otp_type', 'activation');
 
         if (!$userId) {
             if ($request->ajax() || $request->wantsJson()) {
@@ -93,7 +94,7 @@ class OtpVerificationController extends Controller
 
         $otp = OtpVerification::where('user_id', $userId)
             ->where('otp_code', $request->otp_code)
-            ->where('type', 'login')
+            ->where('type', $otpType)
             ->where('is_used', false)
             ->first();
 
@@ -137,7 +138,7 @@ class OtpVerificationController extends Controller
         }
 
         // Clear OTP session data
-        $request->session()->forget(['otp_user_id', 'otp_redirect_route', 'otp_required']);
+        $request->session()->forget(['otp_user_id', 'otp_redirect_route', 'otp_required', 'otp_flow', 'otp_type']);
 
         // Refresh user to ensure we have latest data
         $user->refresh();
@@ -177,11 +178,13 @@ class OtpVerificationController extends Controller
             return redirect()->route('login')->with('error', 'User not found.');
         }
 
+        $otpType = $request->session()->get('otp_type', 'activation');
+
         // Generate new OTP
-        $otp = OtpVerification::generateOtp($userId, 'login');
+        $otp = OtpVerification::generateOtp($userId, $otpType);
 
         try {
-            Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, 'login'));
+            Mail::to($user->email)->send(new OtpMail($user, $otp->otp_code, $otpType));
             
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => true, 'message' => 'A new OTP has been sent to your email.']);

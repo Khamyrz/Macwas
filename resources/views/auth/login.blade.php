@@ -89,8 +89,13 @@
             @endif
         </div>
 
+        <!-- Cookie Table -->
+        <div class="mt-10">
+            @includeIf('components.cookie-table', ['variant' => 'compact'])
+        </div>
+
         <!-- Registration Link -->
-        <div class="text-center border-t pt-4 mt-4">
+        <div class="text-center border-t pt-4 mt-8">
             <p class="text-sm text-gray-600">
                 Don't have an account? 
                 <a href="{{ route('register') }}" class="font-medium text-blue-600 hover:text-blue-500">
@@ -112,6 +117,8 @@ let lockoutTimer = null;
 let unlockMessageShown = false;
 let currentEmail = '{{ old("email") }}';
 let serverLockoutInfo = @json($lockoutInfo ?? null);
+const otpRedirectFallback = @json(session('otp_redirect_route'));
+let otpVerificationInProgress = false;
 
 // Initialize lockout status on page load
 window.addEventListener('load', function() {
@@ -575,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // OTP Verification Modal for Plumber and Accountant (shows before dashboard redirect)
-@if(session('otp_required') && session()->has('otp_user_id'))
+@if(session('otp_required') && session()->has('otp_user_id') && session('otp_flow') === 'modal')
 document.addEventListener('DOMContentLoaded', function() {
     // Show OTP modal immediately on login page
     showOtpModal();
@@ -630,8 +637,15 @@ function showOtpModal() {
 }
 
 function verifyOtp(otpCode) {
+    if (otpVerificationInProgress) {
+        return Promise.resolve(false);
+    }
+
+    otpVerificationInProgress = true;
+
     return fetch('{{ route("otp.verify.post") }}', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -639,65 +653,84 @@ function verifyOtp(otpCode) {
         },
         body: JSON.stringify({ otp_code: otpCode })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Verified!',
-                text: data.message || 'OTP verified successfully! Redirecting to dashboard...',
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => {
-                // Redirect to dashboard after successful verification
-                window.location.href = data.redirect || '{{ session("otp_redirect_route") }}';
-            });
-            return true;
+    .then(async response => {
+        const contentType = response.headers.get('content-type') || '';
+        let data = {};
+
+        if (contentType.includes('application/json')) {
+            data = await response.json();
         } else {
-            Swal.showValidationMessage(data.message || 'Invalid or expired OTP code');
+            throw new Error('Unexpected response from server. Please refresh and try again.');
+        }
+
+        if (!response.ok || !data.success) {
+            const message = data.message || 'Invalid or expired OTP code.';
+            Swal.showValidationMessage(message);
             return false;
         }
+
+        Swal.close();
+        Swal.fire({
+            icon: 'success',
+            title: 'Verified!',
+            text: data.message || 'OTP verified successfully! Redirecting to dashboard...',
+            timer: 1500,
+            showConfirmButton: false
+        }).then(() => {
+            const redirectTarget = data.redirect || otpRedirectFallback || '{{ route("dashboard") }}';
+            window.location.href = redirectTarget;
+        });
+        return true;
     })
     .catch(error => {
-        Swal.showValidationMessage('An error occurred. Please try again.');
+        const fallbackMessage = (error && error.message) ? error.message : 'An error occurred. Please try again.';
+        Swal.showValidationMessage(fallbackMessage);
         return false;
+    })
+    .finally(() => {
+        otpVerificationInProgress = false;
     });
 }
 
 function resendOtp() {
-    fetch('{{ route("otp.resend") }}', {
+    return fetch('{{ route("otp.resend") }}', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
             'Accept': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'OTP Resent',
-                text: data.message || 'A new OTP has been sent to your email.',
-                timer: 2000,
-                showConfirmButton: false
-            }).then(() => {
-                showOtpModal();
-            });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.message || 'Failed to resend OTP. Please try again.'
-            });
+    .then(async response => {
+        const contentType = response.headers.get('content-type') || '';
+        let data = {};
+
+        if (contentType.includes('application/json')) {
+            data = await response.json();
         }
+
+        if (!response.ok || !data.success) {
+            const message = (data && data.message) ? data.message : 'Failed to resend OTP. Please try again.';
+            throw new Error(message);
+        }
+
+        Swal.fire({
+            icon: 'success',
+            title: 'OTP Resent',
+            text: data.message || 'A new OTP has been sent to your email.',
+            timer: 2000,
+            showConfirmButton: false
+        }).then(() => {
+            showOtpModal();
+        });
     })
     .catch(error => {
+        const message = (error && error.message) ? error.message : 'An error occurred. Please try again.';
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'An error occurred. Please try again.'
+            text: message
         });
     });
 }

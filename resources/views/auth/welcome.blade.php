@@ -5,6 +5,16 @@ header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()');
+
+if (!request()->cookies->has('macwas_cookie_policy') && !headers_sent()) {
+    setcookie('macwas_cookie_policy', 'pending', [
+        'expires' => time() + 31536000,
+        'path' => '/',
+        'secure' => request()->isSecure(),
+        'httponly' => false,
+        'samesite' => 'Lax',
+    ]);
+}
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -91,10 +101,17 @@ header('Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
     </div>
   </section>
 
+  <!-- COOKIE DISCLOSURE -->
+  <section class="max-w-5xl mx-auto px-6 pb-16 sm:pb-20">
+    @include('components.cookie-table')
+  </section>
+
   <!-- FOOTER -->
   <footer class="bg-white border-t border-gray-200 py-6 text-center text-sm text-gray-500 mt-auto">
     © {{ date('Y') }} {{ config('app.name','Macwas') }} Water System — All rights reserved.
   </footer>
+
+  @include('components.cookie-consent')
 
 </body>
 </html>
