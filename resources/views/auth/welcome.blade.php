@@ -61,17 +61,10 @@ if (!request()->cookies->has('macwas_cookie_policy') && !headers_sent()) {
       Empowering transparency and efficiency in water services — from billing to maintenance.
     </p>
 
-    @auth
-      <a href="{{ route('dashboard') }}"
-         class="bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-800 transition">
-        Go to Dashboard
-      </a>
-    @else
-      <a href="{{ route('login') }}"
-         class="bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-800 transition">
-        Get Started
-      </a>
-    @endauth
+    <a href="{{ route('login') }}"
+       class="bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-800 transition">
+      Get Started
+    </a>
   </section>
 
   <!-- FEATURES -->
