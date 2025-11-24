@@ -75,7 +75,7 @@
 						</span>
 					</td>
 					<td class="px-6 py-4">
-						<div class="flex space-x-2">
+						<div class="flex space-x-4">
 							<button onclick="editUser({{ $u->id }})" 
 								class="text-blue-600 hover:text-blue-800 text-sm font-medium">
 								Edit
@@ -495,6 +495,3 @@ function updateNoRecordsMessage(visibleCount, searchTerm) {
 }
 </script>
 @endpush
-
-
-
