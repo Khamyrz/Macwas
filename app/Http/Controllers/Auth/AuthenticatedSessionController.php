@@ -11,6 +11,7 @@ use App\Mail\OtpMail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
@@ -31,7 +32,13 @@ class AuthenticatedSessionController extends Controller
             return redirect($this->getRedirectRoute($user->role));
         }
         
-        $adminExists = User::where('role', 'admin')->exists();
+        $adminExists = false;
+
+        try {
+            $adminExists = User::where('role', 'admin')->exists();
+        } catch (\Throwable $e) {
+            Log::warning('Unable to determine if an admin user exists: '.$e->getMessage());
+        }
         
         // Get lockout information for current session
         $email = old('email');
