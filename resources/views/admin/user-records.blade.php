@@ -4,6 +4,16 @@
 <!-- SweetAlert2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
+<style>
+	.action-buttons button {
+		display: inline-block;
+		margin-right: 16px;
+	}
+	.action-buttons button:last-child {
+		margin-right: 0;
+	}
+</style>
+
 <div class="max-w-7xl mx-auto px-4 py-6">
 	<h1 class="text-2xl font-bold mb-4 capitalize">{{ $role }} Records</h1>
 
@@ -75,13 +85,13 @@
 						</span>
 					</td>
 					<td class="px-6 py-4">
-						<div class="flex items-center">
+						<div class="action-buttons">
 							<button onclick="editUser({{ $u->id }})" 
-								class="text-blue-600 hover:text-blue-800 text-sm font-medium mr-4">
+								class="text-blue-600 hover:text-blue-800 text-sm font-medium" style="margin-right: 20px;">
 								Edit
 							</button>
 							<button onclick="deleteUser({{ $u->id }}, '{{ $u->full_name }}')" 
-								class="text-red-600 hover:text-red-800 text-sm font-medium ml-4">
+								class="text-red-600 hover:text-red-800 text-sm font-medium">
 								Delete
 							</button>
 						</div>
