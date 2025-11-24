@@ -34,9 +34,40 @@ Route::match(['get', 'post', 'head', 'options', 'put', 'delete', 'patch'], '/pub
     }
 })->where('path', '.*');
 
-// Redirect root URL to welcome page
+// Redirect root URL to welcome page with hardened headers + cookie fallback
 Route::get('/', function () {
-    return view('auth.welcome');
+    $cookieItems = collect(config('cookies.defaults', []))
+        ->map(fn ($cookie) => (object) $cookie);
+
+    $response = response()->view('auth.welcome', [
+        'cookieItems' => $cookieItems,
+    ]);
+
+    if (!request()->cookies->has('macwas_cookie_policy')) {
+        $cookie = cookie(
+            'macwas_cookie_policy',
+            'pending',
+            60 * 24 * 365, // minutes in a year
+            '/',
+            null,
+            request()->isSecure(),
+            false,
+            false,
+            'lax'
+        );
+
+        $response->withCookie($cookie);
+    }
+
+    $securityHeaders = [
+        'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains',
+        'X-Frame-Options' => 'SAMEORIGIN',
+        'X-Content-Type-Options' => 'nosniff',
+        'Referrer-Policy' => 'strict-origin-when-cross-origin',
+        'Permissions-Policy' => 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()',
+    ];
+
+    return $response->withHeaders($securityHeaders);
 });
 
 // Removed admin registration routes per request
@@ -75,6 +106,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/operations', [AdminController::class, 'operations'])->name('operations');
     Route::get('/monthly-bills', [AdminController::class, 'monthlyBillsPage'])->name('monthly-bills');
+    Route::post('/overdue-notices/send', [AdminController::class, 'sendOverdueNotices'])->name('overdue-notices.send');
     Route::get('/pending-accounts', [AdminController::class, 'pendingAccounts'])->name('pending-accounts');
     Route::post('/approve-account/{id}', [AdminController::class, 'approveAccount'])->name('approve-account');
     Route::post('/reject-account/{id}', [AdminController::class, 'rejectAccount'])->name('reject-account');

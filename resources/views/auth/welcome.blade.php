@@ -1,21 +1,3 @@
-@php
-// Set security headers for this page (required by securityheaders.com)
-header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-header('X-Frame-Options: SAMEORIGIN');
-header('X-Content-Type-Options: nosniff');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header('Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()');
-
-if (!request()->cookies->has('macwas_cookie_policy') && !headers_sent()) {
-    setcookie('macwas_cookie_policy', 'pending', [
-        'expires' => time() + 31536000,
-        'path' => '/',
-        'secure' => request()->isSecure(),
-        'httponly' => false,
-        'samesite' => 'Lax',
-    ]);
-}
-@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -96,7 +78,7 @@ if (!request()->cookies->has('macwas_cookie_policy') && !headers_sent()) {
 
   <!-- COOKIE DISCLOSURE -->
   <section class="max-w-5xl mx-auto px-6 pb-16 sm:pb-20">
-    @include('components.cookie-table')
+    @include('components.cookie-table', ['cookies' => $cookieItems ?? null])
   </section>
 
   <!-- FOOTER -->

@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\SetupRequest;
 use App\Models\OtpVerification;
 use App\Mail\OtpMail;
+use App\Mail\OverdueNotice;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -306,6 +307,41 @@ class AdminController extends Controller
         }
 
         return redirect()->back()->with('success', 'Monthly bills generated successfully!');
+    }
+
+    public function sendOverdueNotices()
+    {
+        $overdueBills = WaterBill::overdue()
+            ->with('customer')
+            ->get()
+            ->groupBy('customer_id');
+
+        if ($overdueBills->isEmpty()) {
+            return redirect()->back()->with('info', 'No overdue customers to notify right now.');
+        }
+
+        $sentCount = 0;
+
+        foreach ($overdueBills as $customerBills) {
+            $customer = $customerBills->first()->customer;
+
+            if (!$customer || !$customer->email) {
+                continue;
+            }
+
+            try {
+                Mail::to($customer->email)->send(new OverdueNotice($customer, $customerBills));
+                $sentCount++;
+            } catch (\Throwable $e) {
+                \Log::error('Failed to send overdue notice to '.$customer->email.': '.$e->getMessage());
+            }
+        }
+
+        if ($sentCount === 0) {
+            return redirect()->back()->with('info', 'Unable to send notices. Please verify customer email addresses.');
+        }
+
+        return redirect()->back()->with('success', "Sent overdue reminders to {$sentCount} customer(s).");
     }
 
     // Admin-created accounts

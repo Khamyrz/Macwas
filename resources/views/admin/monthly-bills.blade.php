@@ -7,6 +7,38 @@
         <p class="text-gray-600">Generate monthly bills and review recent billing activity</p>
     </div>
 
+    @if(session('success'))
+        <div class="mb-4 rounded-md bg-green-50 p-4 text-green-800">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('info'))
+        <div class="mb-4 rounded-md bg-blue-50 p-4 text-blue-800">
+            {{ session('info') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="mb-4 rounded-md bg-red-50 p-4 text-red-800">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <div class="bg-white rounded-lg shadow mb-8">
+        <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900">Overdue Customer Notices</h3>
+                <p class="text-sm text-gray-500">Send reminder emails to every customer with past-due bills.</p>
+            </div>
+            <form method="POST" action="{{ route('admin.overdue-notices.send') }}">
+                @csrf
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Send Overdue Notices
+                </button>
+            </form>
+        </div>
+    </div>
+
    
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
