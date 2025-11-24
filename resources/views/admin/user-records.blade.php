@@ -75,14 +75,13 @@
 						</span>
 					</td>
 					<td class="px-6 py-4">
-						<div class="flex gap-4">
+						<div class="flex items-center">
 							<button onclick="editUser({{ $u->id }})" 
-								class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+								class="text-blue-600 hover:text-blue-800 text-sm font-medium mr-4">
 								Edit
 							</button>
-							<span class="text-gray-300">|</span>
 							<button onclick="deleteUser({{ $u->id }}, '{{ $u->full_name }}')" 
-								class="text-red-600 hover:text-red-800 text-sm font-medium">
+								class="text-red-600 hover:text-red-800 text-sm font-medium ml-4">
 								Delete
 							</button>
 						</div>
