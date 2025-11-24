@@ -5,7 +5,7 @@
     <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
         <div class="mb-6 text-center">
             <h2 class="text-2xl font-bold text-gray-900 mb-2 cursor-pointer" id="adminUnlock" title="Login">
-                Login Water
+                Login
             </h2>
             <p class="text-sm text-gray-600">Sign in to your account</p>
             @if(isset($adminExists) && !$adminExists)
