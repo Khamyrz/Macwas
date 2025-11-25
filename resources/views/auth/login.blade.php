@@ -63,7 +63,7 @@
                            class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                     <button type="button"
                             id="togglePassword"
-                            class="absolute right-0 top-0 bottom-0 flex items-center justify-center px-3 text-gray-500 hover:text-gray-700 focus:outline-none transition-colors"
+                            class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center px-3 text-gray-500 hover:text-gray-700 focus:outline-none transition-colors"
                             aria-label="Show password"
                             aria-pressed="false"
                             style="pointer-events: auto;">
