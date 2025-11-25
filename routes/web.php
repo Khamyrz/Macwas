@@ -36,36 +36,54 @@ Route::match(['get', 'post', 'head', 'options', 'put', 'delete', 'patch'], '/pub
 
 // Redirect root URL to welcome page with hardened headers + cookie fallback
 Route::get('/', function () {
-    $cookieItems = collect(config('cookies.defaults', []))
-        ->map(fn ($cookie) => (object) $cookie);
+    try {
+        $cookieItems = collect(config('cookies.defaults', []))
+            ->map(fn ($cookie) => (object) $cookie);
+    } catch (\Throwable $e) {
+        $cookieItems = collect([]);
+    }
 
-    $response = response()->view('auth.welcome', [
-        'cookieItems' => $cookieItems,
-    ]);
+    try {
+        $response = response()->view('auth.welcome', [
+            'cookieItems' => $cookieItems,
+        ]);
+    } catch (\Throwable $e) {
+        \Log::error('Failed to render welcome view: ' . $e->getMessage());
+        abort(500, 'Unable to load welcome page. Please try again later.');
+    }
 
-    if (!request()->cookies->has('macwas_cookie_policy')) {
-        $cookie = cookie(
-            'macwas_cookie_policy',
-            'pending',
-            60 * 24 * 365, // minutes in a year
-            '/',
-            null,
-            request()->isSecure(),
-            false,
-            false,
-            'lax'
-        );
+    try {
+        if (!request()->cookies->has('macwas_cookie_policy')) {
+            $cookie = cookie(
+                'macwas_cookie_policy',
+                'pending',
+                60 * 24 * 365, // minutes in a year
+                '/',
+                null,
+                request()->isSecure(),
+                false,
+                false,
+                'lax'
+            );
 
-        $response->withCookie($cookie);
+            $response->withCookie($cookie);
+        }
+    } catch (\Throwable $e) {
+        \Log::warning('Failed to set cookie: ' . $e->getMessage());
     }
 
     $securityHeaders = [
-        'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains',
         'X-Frame-Options' => 'SAMEORIGIN',
         'X-Content-Type-Options' => 'nosniff',
         'Referrer-Policy' => 'strict-origin-when-cross-origin',
-        'Permissions-Policy' => 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()',
     ];
+
+    // Only add HSTS if HTTPS
+    if (request()->isSecure()) {
+        $securityHeaders['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
+    }
+
+    $securityHeaders['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=()';
 
     return $response->withHeaders($securityHeaders);
 });

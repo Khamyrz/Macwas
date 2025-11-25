@@ -23,13 +23,16 @@
   <header class="fixed top-0 left-0 w-full bg-white border-b border-gray-200 z-20 shadow-sm">
     <div class="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 sm:px-6">
       <div class="flex items-center space-x-2">
-        <img src="{{ asset('images/logo.png') }}" alt="Macwas Logo" class="h-10 w-10">
+        @php
+          $logoPath = file_exists(public_path('images/logo.png')) ? asset('images/logo.png') : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iIzE2NjNlYSIvPgo8cGF0aCBkPSJNMTIgMTJIMjhWMjhIMTJWMjhaIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K';
+        @endphp
+        <img src="{{ $logoPath }}" alt="Macwas Logo" class="h-10 w-10">
         <span class="text-xl sm:text-2xl font-semibold text-blue-700 tracking-tight">Macwas</span>
       </div>
 
       <nav class="flex space-x-5 text-sm sm:text-base font-medium">
-        <a href="{{ route('login') }}" class="text-gray-700 hover:text-blue-700 transition-colors">Login</a>
-        <a href="{{ route('register') }}" class="text-gray-700 hover:text-blue-700 transition-colors">Register</a>
+        <a href="{{ url('/login') }}" class="text-gray-700 hover:text-blue-700 transition-colors">Login</a>
+        <a href="{{ url('/register') }}" class="text-gray-700 hover:text-blue-700 transition-colors">Register</a>
       </nav>
     </div>
   </header>
@@ -43,7 +46,7 @@
       Empowering transparency and efficiency in water services — from billing to maintenance.
     </p>
 
-    <a href="{{ route('login') }}"
+    <a href="{{ url('/login') }}"
        class="bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-800 transition">
       Get Started
     </a>
@@ -78,7 +81,7 @@
 
   <!-- COOKIE DISCLOSURE -->
   <section class="max-w-5xl mx-auto px-6 pb-16 sm:pb-20">
-    @include('components.cookie-table', ['cookies' => $cookieItems ?? null])
+    @includeIf('components.cookie-table', ['cookies' => $cookieItems ?? null])
   </section>
 
   <!-- FOOTER -->
@@ -86,7 +89,7 @@
     © {{ date('Y') }} {{ config('app.name','Macwas') }} Water System — All rights reserved.
   </footer>
 
-  @include('components.cookie-consent')
+  @includeIf('components.cookie-consent')
 
 </body>
 </html>
