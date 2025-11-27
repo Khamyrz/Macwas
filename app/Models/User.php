@@ -15,18 +15,46 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory, Notifiable;
     
     /**
+     * Cache for soft deletes availability check
+     */
+    protected static $softDeletesAvailable = null;
+    
+    /**
      * Boot the model.
      */
     protected static function boot()
     {
         parent::boot();
         
-        // Only apply soft delete scope if column exists
-        if (Schema::hasColumn('users', 'deleted_at')) {
-            static::addGlobalScope('notDeleted', function ($builder) {
-                $builder->whereNull('users.deleted_at');
-            });
+        // Only apply soft delete scope if column exists (with error handling)
+        // Check is done inside the scope closure to avoid issues if schema changes
+        static::addGlobalScope('notDeleted', function ($builder) {
+            try {
+                if (static::checkSoftDeletesAvailable()) {
+                    $builder->whereNull('users.deleted_at');
+                }
+            } catch (\Exception $e) {
+                // Silently fail if schema check fails - don't apply scope
+            }
+        });
+    }
+    
+    /**
+     * Check if soft deletes are available (cached)
+     */
+    protected static function checkSoftDeletesAvailable()
+    {
+        if (static::$softDeletesAvailable !== null) {
+            return static::$softDeletesAvailable;
         }
+        
+        try {
+            static::$softDeletesAvailable = Schema::hasColumn('users', 'deleted_at');
+        } catch (\Exception $e) {
+            static::$softDeletesAvailable = false;
+        }
+        
+        return static::$softDeletesAvailable;
     }
     
     /**
@@ -34,7 +62,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected function hasSoftDeletes()
     {
-        return Schema::hasColumn('users', 'deleted_at');
+        return static::checkSoftDeletesAvailable();
     }
     
     /**

@@ -233,15 +233,24 @@ class AdminController extends Controller
 
     public function userRecords($role)
     {
-        $query = User::where('role', $role);
-        
-        // Only filter by deleted_at if the column exists
-        if (Schema::hasColumn('users', 'deleted_at')) {
-            $query->whereNull('deleted_at');
-        }
-        
-        $users = $query->orderBy('created_at', 'asc')->paginate(10);
+        try {
+            $query = User::where('role', $role);
+            
+            // Only filter by deleted_at if the column exists
+            try {
+                if (Schema::hasColumn('users', 'deleted_at')) {
+                    $query->whereNull('deleted_at');
+                }
+            } catch (\Exception $e) {
+                // Column doesn't exist or schema check failed, continue without filter
+            }
+            
+            $users = $query->orderBy('created_at', 'asc')->paginate(10);
         return view('admin.user-records', compact('users', 'role'));
+        } catch (\Exception $e) {
+            \Log::error('Error in userRecords: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'An error occurred while loading user records.');
+        }
     }
 
     public function searchUsers(Request $request, $role)
@@ -560,6 +569,7 @@ class AdminController extends Controller
 
     public function destroyUser($id)
     {
+        try {
         $user = User::findOrFail($id);
         
         // Prevent deletion of admin users
@@ -570,48 +580,83 @@ class AdminController extends Controller
             ], 403);
         }
 
-        // Check if soft deletes are available
-        if (Schema::hasColumn('users', 'deleted_at')) {
-            // Soft delete the user (moves to delete history)
-            $user->delete();
-            $message = 'User deleted successfully! Account moved to delete history.';
-        } else {
-            // Fallback to hard delete if column doesn't exist
-            $user->waterBills()->delete();
-            $user->payments()->delete();
-            $user->customerPayments()->delete();
-            $user->waterConnections()->delete();
-            $user->customerConnections()->delete();
-            $user->forceDelete();
-            $message = 'User deleted successfully!';
-        }
+            // Check if soft deletes are available
+            try {
+                if (Schema::hasColumn('users', 'deleted_at')) {
+                    // Soft delete the user (moves to delete history)
+                    $user->delete();
+                    $message = 'User deleted successfully! Account moved to delete history.';
+                } else {
+                    // Fallback to hard delete if column doesn't exist
+                    $user->waterBills()->delete();
+                    $user->payments()->delete();
+                    $user->customerPayments()->delete();
+                    $user->waterConnections()->delete();
+                    $user->customerConnections()->delete();
+                    $user->forceDelete();
+                    $message = 'User deleted successfully!';
+                }
+            } catch (\Exception $e) {
+                // If schema check fails, use hard delete
+        $user->waterBills()->delete();
+        $user->payments()->delete();
+        $user->customerPayments()->delete();
+        $user->waterConnections()->delete();
+        $user->customerConnections()->delete();
+                $user->forceDelete();
+                $message = 'User deleted successfully!';
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => $message
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in destroyUser: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while deleting the user.'
+            ], 500);
+        }
     }
 
     public function deleteHistory($role)
     {
-        // Check if soft deletes are available
-        if (!Schema::hasColumn('users', 'deleted_at')) {
+        try {
+            // Check if soft deletes are available
+            try {
+                if (!Schema::hasColumn('users', 'deleted_at')) {
+                    return response()->json([
+                        'success' => true,
+                        'users' => [],
+                        'message' => 'Soft delete feature not available. Please run migrations.'
+                    ]);
+                }
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => true,
+                    'users' => [],
+                    'message' => 'Soft delete feature not available.'
+                ]);
+            }
+
+            $deletedUsers = User::onlyTrashed()
+                ->where('role', $role)
+                ->orderBy('deleted_at', 'desc')
+                ->get();
+
             return response()->json([
                 'success' => true,
-                'users' => [],
-                'message' => 'Soft delete feature not available. Please run migrations.'
+                'users' => $deletedUsers
             ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in deleteHistory: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'users' => [],
+                'message' => 'An error occurred while loading delete history.'
+            ], 500);
         }
-
-        $deletedUsers = User::onlyTrashed()
-            ->where('role', $role)
-            ->orderBy('deleted_at', 'desc')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'users' => $deletedUsers
-        ]);
     }
 
     public function restoreUser($id)

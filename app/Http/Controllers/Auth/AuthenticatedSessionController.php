@@ -103,21 +103,29 @@ class AuthenticatedSessionController extends Controller
                 return redirect()->route('login')->with('error', 'Customer number not found.')->onlyInput('email');
             }
             // Check if account is soft-deleted (only if column exists)
-            if (Schema::hasColumn('users', 'deleted_at') && $customer->trashed()) {
-                LoginAttempt::recordFailedAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);
-                return redirect()->route('login')->with('error', 'This account has been deleted. Please contact administrator.')->onlyInput('email');
+            try {
+                if (Schema::hasColumn('users', 'deleted_at') && $customer->trashed()) {
+                    LoginAttempt::recordFailedAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);
+                    return redirect()->route('login')->with('error', 'This account has been deleted. Please contact administrator.')->onlyInput('email');
+                }
+            } catch (\Exception $e) {
+                // Schema check failed, continue with login
             }
             // Swap to the customer's email for authentication; role will be corrected later if needed
             $email = $customer->email;
             // If the selected role is wrong, it will be corrected by the role-mismatch handler below
         } else {
             // Check if user account is soft-deleted (for email login, only if column exists)
-            if (Schema::hasColumn('users', 'deleted_at')) {
-                $userCheck = User::where('email', $email)->first();
-                if ($userCheck && $userCheck->trashed()) {
-                    LoginAttempt::recordFailedAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);
-                    return redirect()->route('login')->with('error', 'This account has been deleted. Please contact administrator.')->onlyInput('email');
+            try {
+                if (Schema::hasColumn('users', 'deleted_at')) {
+                    $userCheck = User::where('email', $email)->first();
+                    if ($userCheck && $userCheck->trashed()) {
+                        LoginAttempt::recordFailedAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);
+                        return redirect()->route('login')->with('error', 'This account has been deleted. Please contact administrator.')->onlyInput('email');
+                    }
                 }
+            } catch (\Exception $e) {
+                // Schema check failed, continue with login
             }
         }
 
@@ -138,10 +146,14 @@ class AuthenticatedSessionController extends Controller
             $user = auth()->user();
 
             // Check if user account is soft-deleted (only if column exists)
-            if (Schema::hasColumn('users', 'deleted_at') && $user->trashed()) {
-                Auth::logout();
-                LoginAttempt::recordFailedAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);
-                return redirect()->route('login')->with('error', 'This account has been deleted. Please contact administrator.')->onlyInput('email');
+            try {
+                if (Schema::hasColumn('users', 'deleted_at') && $user->trashed()) {
+                    Auth::logout();
+                    LoginAttempt::recordFailedAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);
+                    return redirect()->route('login')->with('error', 'This account has been deleted. Please contact administrator.')->onlyInput('email');
+                }
+            } catch (\Exception $e) {
+                // Schema check failed, continue with login
             }
 
             // Record successful login attempt
