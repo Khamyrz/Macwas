@@ -187,6 +187,12 @@
                             <span class="font-medium text-gray-600">Name:</span>
                             <span class="font-semibold">{{ $cu['name'] }}</span>
                         </div>
+                        @if(isset($cu['customer_number']))
+                        <div class="flex justify-between">
+                            <span class="font-medium text-gray-600">Customer #:</span>
+                            <span class="font-semibold">{{ $cu['customer_number'] }}</span>
+                        </div>
+                        @endif
                         <div class="flex justify-between">
                             <span class="font-medium text-gray-600">Role:</span>
                             <span class="font-semibold">{{ ucfirst($cu['role']) }}</span>
@@ -195,6 +201,12 @@
                             <span class="font-medium text-gray-600">Email:</span>
                             <span class="font-semibold">{{ $cu['email'] }}</span>
                         </div>
+                        @if(isset($cu['phone_number']))
+                        <div class="flex justify-between">
+                            <span class="font-medium text-gray-600">Phone:</span>
+                            <span class="font-semibold">{{ $cu['phone_number'] }}</span>
+                        </div>
+                        @endif
                         <div class="flex justify-between">
                             <span class="font-medium text-gray-600">Temporary Password:</span>
                             <span class="font-mono bg-yellow-100 px-2 py-1 rounded text-red-600 font-bold">{{ $cu['password'] }}</span>

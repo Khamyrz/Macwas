@@ -474,6 +474,7 @@ class AdminController extends Controller
             'id' => $user->id,
             'name' => $user->full_name,
             'email' => $user->email,
+            'phone_number' => $user->phone_number,
             'role' => $user->role,
             'password' => $user->plain_password,
         ];
