@@ -101,9 +101,21 @@ class AuthenticatedSessionController extends Controller
                 }
                 return redirect()->route('login')->with('error', 'Customer number not found.')->onlyInput('email');
             }
+            // Check if account is soft-deleted
+            if ($customer->trashed()) {
+                LoginAttempt::recordFailedAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);
+                return redirect()->route('login')->with('error', 'This account has been deleted. Please contact administrator.')->onlyInput('email');
+            }
             // Swap to the customer's email for authentication; role will be corrected later if needed
             $email = $customer->email;
             // If the selected role is wrong, it will be corrected by the role-mismatch handler below
+        } else {
+            // Check if user account is soft-deleted (for email login)
+            $userCheck = User::where('email', $email)->first();
+            if ($userCheck && $userCheck->trashed()) {
+                LoginAttempt::recordFailedAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);
+                return redirect()->route('login')->with('error', 'This account has been deleted. Please contact administrator.')->onlyInput('email');
+            }
         }
 
         // Check if account is locked out
@@ -121,6 +133,13 @@ class AuthenticatedSessionController extends Controller
             $request->session()->regenerate();
 
             $user = auth()->user();
+
+            // Check if user account is soft-deleted
+            if ($user->trashed()) {
+                Auth::logout();
+                LoginAttempt::recordFailedAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);
+                return redirect()->route('login')->with('error', 'This account has been deleted. Please contact administrator.')->onlyInput('email');
+            }
 
             // Record successful login attempt
             LoginAttempt::recordSuccessfulAttempt($email, $ipAddress, $userAgent, $latitude, $longitude);

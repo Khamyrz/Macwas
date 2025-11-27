@@ -12,7 +12,10 @@
 	@endif
 
 	<div class="flex justify-between items-center mb-4">
-		<a href="{{ route('admin.create-user') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Create {{ ucfirst($role) }}</a>
+		<div class="flex items-center space-x-2">
+			<a href="{{ route('admin.create-user') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Create {{ ucfirst($role) }}</a>
+			<button onclick="openDeleteHistory()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete History</button>
+		</div>
 		
 		<!-- Search Bar -->
 		<div class="flex items-center space-x-2">
@@ -228,6 +231,50 @@
     </div>
 </div>
 @endif
+
+<!-- Delete History Modal -->
+<div id="deleteHistoryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-4/5 max-w-4xl shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Delete History - {{ ucfirst($role) }}s</h3>
+                <button onclick="closeDeleteHistoryModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <div id="deleteHistoryContent" class="max-h-96 overflow-y-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer #</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deleted At</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deleteHistoryTableBody" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeDeleteHistoryModal()" class="px-4 py-2 text-sm bg-gray-200 rounded hover:bg-gray-300">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -514,6 +561,182 @@ function updateNoRecordsMessage(visibleCount, searchTerm) {
     } else if (noRecordsRow) {
         noRecordsRow.style.display = 'none';
     }
+}
+
+// Delete History functionality
+window.openDeleteHistory = function() {
+    const modal = document.getElementById('deleteHistoryModal');
+    modal.classList.remove('hidden');
+    loadDeleteHistory();
+}
+
+window.closeDeleteHistoryModal = function() {
+    const modal = document.getElementById('deleteHistoryModal');
+    modal.classList.add('hidden');
+}
+
+function loadDeleteHistory() {
+    const role = '{{ $role }}';
+    const tbody = document.getElementById('deleteHistoryTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>';
+    
+    fetch(`/admin/delete-history/${role}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.users.length > 0) {
+            tbody.innerHTML = data.users.map(user => {
+                const deletedAt = new Date(user.deleted_at).toLocaleString();
+                const customerNumber = user.customer_number ? 
+                    `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${user.customer_number}</span>` : 
+                    '<span class="text-gray-400">N/A</span>';
+                
+                return `
+                    <tr>
+                        <td class="px-6 py-4">${customerNumber}</td>
+                        <td class="px-6 py-4">${user.first_name} ${user.last_name}</td>
+                        <td class="px-6 py-4">${user.email}</td>
+                        <td class="px-6 py-4">${user.phone_number || 'N/A'}</td>
+                        <td class="px-6 py-4">${deletedAt}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-2">
+                                <button onclick="restoreUser(${user.id})" 
+                                    class="text-green-600 hover:text-green-800 text-sm font-medium">
+                                    Restore
+                                </button>
+                                <button onclick="clearUser(${user.id}, '${user.first_name} ${user.last_name}')" 
+                                    class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                    Clear
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No deleted accounts found</td></tr>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading delete history:', error);
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading delete history</td></tr>';
+    });
+}
+
+window.restoreUser = function(userId) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'This will restore the account and allow the user to login again. A notification email will be sent.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, restore it!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Restoring...',
+                text: 'Please wait',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            fetch(`/admin/users/${userId}/restore`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(async response => {
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await response.json() : {};
+                if (!response.ok || (isJson && data.success === false)) {
+                    throw new Error((data && data.message) ? data.message : `HTTP ${response.status}`);
+                }
+                return data;
+            })
+            .then((data) => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Restored!',
+                    text: data.message || 'User restored successfully!',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    loadDeleteHistory();
+                    location.reload();
+                });
+            })
+            .catch((error) => {
+                console.error('Restore failed:', error);
+                Swal.fire('Error', error && error.message ? error.message : 'Failed to restore user', 'error');
+            });
+        }
+    });
+}
+
+window.clearUser = function(userId, userName) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: `This will permanently delete "${userName}" and clear all credentials. This action cannot be undone!`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, clear it!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Clearing...',
+                text: 'Please wait',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            fetch(`/admin/users/${userId}/clear`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(async response => {
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await response.json() : {};
+                if (!response.ok || (isJson && data.success === false)) {
+                    throw new Error((data && data.message) ? data.message : `HTTP ${response.status}`);
+                }
+                return data;
+            })
+            .then((data) => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Cleared!',
+                    text: data.message || 'User permanently deleted!',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    loadDeleteHistory();
+                });
+            })
+            .catch((error) => {
+                console.error('Clear failed:', error);
+                Swal.fire('Error', error && error.message ? error.message : 'Failed to clear user', 'error');
+            });
+        }
+    });
 }
 </script>
 @endpush

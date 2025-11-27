@@ -140,6 +140,9 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/users/{id}', [AdminController::class, 'showUser'])->name('users.show');
     Route::put('/users/{id}', [AdminController::class, 'updateUser'])->name('users.update');
     Route::delete('/users/{id}', [AdminController::class, 'destroyUser'])->name('users.destroy');
+    Route::get('/delete-history/{role}', [AdminController::class, 'deleteHistory'])->name('delete-history');
+    Route::post('/users/{id}/restore', [AdminController::class, 'restoreUser'])->name('users.restore');
+    Route::delete('/users/{id}/clear', [AdminController::class, 'clearUser'])->name('users.clear');
     
     // Login Monitoring Routes
     Route::get('/monitoring', [LoginMonitoringController::class, 'index'])->name('monitoring');

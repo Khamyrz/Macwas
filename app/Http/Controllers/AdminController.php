@@ -11,6 +11,7 @@ use App\Models\SetupRequest;
 use App\Models\OtpVerification;
 use App\Mail\OtpMail;
 use App\Mail\OverdueNotice;
+use App\Mail\AccountRestored;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -233,6 +234,7 @@ class AdminController extends Controller
     public function userRecords($role)
     {
         $users = User::where('role', $role)
+            ->whereNull('deleted_at')
             ->orderBy('created_at', 'asc')
             ->paginate(10);
         return view('admin.user-records', compact('users', 'role'));
@@ -564,19 +566,74 @@ class AdminController extends Controller
             ], 403);
         }
 
-        // Delete related records first
-        $user->waterBills()->delete();
-        $user->payments()->delete();
-        $user->customerPayments()->delete();
-        $user->waterConnections()->delete();
-        $user->customerConnections()->delete();
-        
-        // Delete the user
+        // Soft delete the user (moves to delete history)
         $user->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'User deleted successfully!'
+            'message' => 'User deleted successfully! Account moved to delete history.'
+        ]);
+    }
+
+    public function deleteHistory($role)
+    {
+        $deletedUsers = User::onlyTrashed()
+            ->where('role', $role)
+            ->orderBy('deleted_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'users' => $deletedUsers
+        ]);
+    }
+
+    public function restoreUser($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+        
+        // Restore the user
+        $user->restore();
+
+        // Send notification email
+        try {
+            Mail::to($user->email)->send(new AccountRestored($user));
+        } catch (\Exception $e) {
+            // Log error but don't fail the restore operation
+            \Log::error('Failed to send account restored email: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User restored successfully! Notification email sent.'
+        ]);
+    }
+
+    public function clearUser($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+        
+        // Prevent permanent deletion of admin users
+        if ($user->role === 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot permanently delete admin users.'
+            ], 403);
+        }
+
+        // Permanently delete related records
+        $user->waterBills()->forceDelete();
+        $user->payments()->forceDelete();
+        $user->customerPayments()->forceDelete();
+        $user->waterConnections()->forceDelete();
+        $user->customerConnections()->forceDelete();
+        
+        // Permanently delete the user
+        $user->forceDelete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User permanently deleted and all credentials cleared.'
         ]);
     }
 }
