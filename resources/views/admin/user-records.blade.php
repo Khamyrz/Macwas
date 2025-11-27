@@ -93,6 +93,16 @@
 			</tbody>
 		</table>
 	</div>
+	
+	<!-- Pagination -->
+	<div class="mt-4 flex items-center justify-between">
+		<div class="text-sm text-gray-700">
+			Showing {{ $users->firstItem() ?? 0 }} to {{ $users->lastItem() ?? 0 }} of {{ $users->total() }} results
+		</div>
+		<div class="flex space-x-2">
+			{{ $users->links() }}
+		</div>
+	</div>
 </div>
 
 <!-- Edit User Modal -->

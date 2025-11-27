@@ -232,7 +232,9 @@ class AdminController extends Controller
 
     public function userRecords($role)
     {
-        $users = User::where('role', $role)->get();
+        $users = User::where('role', $role)
+            ->orderBy('created_at', 'asc')
+            ->paginate(10);
         return view('admin.user-records', compact('users', 'role'));
     }
 
