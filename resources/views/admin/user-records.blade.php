@@ -12,11 +12,11 @@
 	@endif
 
 	<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
-		<a href="{{ route('admin.create-user') }}" class="px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 w-full md:w-auto text-center">Create {{ ucfirst($role) }}</a>
+		<a href="{{ route('admin.create-user') }}" class="px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 w-full md:w-fit text-center">Create {{ ucfirst($role) }}</a>
 		
 		<!-- Search Bar & Delete History -->
 		<div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:space-x-3 w-full">
-			<button onclick="openDeleteHistory()" class="px-2.5 py-1 bg-red-600 text-white rounded hover:bg-red-700 shadow-sm w-full sm:w-auto text-center">Delete History</button>
+			<button onclick="openDeleteHistory()" class="px-2.5 py-1 bg-red-600 text-white rounded hover:bg-red-700 shadow-sm w-full sm:w-fit text-center">Delete History</button>
 			
 			<div class="flex items-center space-x-2 w-full sm:w-auto">
 				<div class="relative">
