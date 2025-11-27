@@ -11,15 +11,15 @@
 		@php($cu = session('created_user'))
 	@endif
 
-	<div class="flex justify-between items-center mb-4">
-		<div class="flex items-center space-x-2">
-			<a href="{{ route('admin.create-user') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Create {{ ucfirst($role) }}</a>
-			<button onclick="openDeleteHistory()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete History</button>
-		</div>
+	<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+		<a href="{{ route('admin.create-user') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full md:w-auto text-center">Create {{ ucfirst($role) }}</a>
 		
-		<!-- Search Bar -->
-		<div class="flex items-center space-x-2">
-			<div class="relative">
+		<!-- Search Bar & Delete History -->
+		<div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:space-x-3 w-full">
+			<button onclick="openDeleteHistory()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 shadow-sm w-full sm:w-auto text-center">Delete History</button>
+			
+			<div class="flex items-center space-x-2 w-full sm:w-auto">
+				<div class="relative">
 				<input type="text" 
 					   id="searchInput" 
 					   placeholder="Search {{ ucfirst($role) }}s..." 
@@ -38,6 +38,8 @@
 			<div id="searchResults" class="text-sm text-gray-500" style="display: none;">
 				<span id="resultCount">0</span> results found
 			</div>
+			</div>
+		</div>
 		</div>
 	</div>
 
@@ -604,13 +606,13 @@ function loadDeleteHistory() {
                         <td class="px-6 py-4">${user.phone_number || 'N/A'}</td>
                         <td class="px-6 py-4">${deletedAt}</td>
                         <td class="px-6 py-4">
-                            <div class="flex items-center space-x-2">
-                                <button onclick="restoreUser(${user.id})" 
-                                    class="text-green-600 hover:text-green-800 text-sm font-medium">
+                            <div class="flex items-center space-x-3">
+                                <button type="button" onclick="restoreUser(${user.id})" 
+                                    class="px-3 py-1 text-sm font-semibold text-white bg-green-600 rounded hover:bg-green-700">
                                     Restore
                                 </button>
-                                <button onclick="clearUser(${user.id}, '${user.first_name} ${user.last_name}')" 
-                                    class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                <button type="button" onclick="clearUser(${user.id}, '${user.first_name} ${user.last_name}')" 
+                                    class="px-3 py-1 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700">
                                     Clear
                                 </button>
                             </div>
