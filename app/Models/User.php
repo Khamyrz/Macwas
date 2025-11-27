@@ -8,11 +8,111 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable;
+    
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        // Only apply soft delete scope if column exists
+        if (Schema::hasColumn('users', 'deleted_at')) {
+            static::addGlobalScope('notDeleted', function ($builder) {
+                $builder->whereNull('users.deleted_at');
+            });
+        }
+    }
+    
+    /**
+     * Check if soft deletes are available
+     */
+    protected function hasSoftDeletes()
+    {
+        return Schema::hasColumn('users', 'deleted_at');
+    }
+    
+    /**
+     * Determine if the model instance has been soft-deleted.
+     */
+    public function trashed()
+    {
+        if (!$this->hasSoftDeletes()) {
+            return false;
+        }
+        
+        return !is_null($this->deleted_at);
+    }
+    
+    /**
+     * Restore a soft-deleted model instance.
+     */
+    public function restore()
+    {
+        if (!$this->hasSoftDeletes()) {
+            return false;
+        }
+        
+        $this->deleted_at = null;
+        return $this->save();
+    }
+    
+    /**
+     * Perform the actual delete query on this model instance.
+     */
+    protected function performDeleteOnModel()
+    {
+        if ($this->hasSoftDeletes() && !($this->isForceDeleting ?? false)) {
+            $this->deleted_at = $this->freshTimestamp();
+            return $this->save();
+        }
+        
+        return parent::performDeleteOnModel();
+    }
+    
+    /**
+     * Get a new query builder that includes soft deletes
+     */
+    public static function withTrashed()
+    {
+        if (!Schema::hasColumn('users', 'deleted_at')) {
+            return static::query();
+        }
+        
+        $instance = new static;
+        $query = $instance->newQuery();
+        $query->withoutGlobalScope('notDeleted');
+        return $query;
+    }
+    
+    /**
+     * Get a new query builder that only includes soft deletes
+     */
+    public static function onlyTrashed()
+    {
+        if (!Schema::hasColumn('users', 'deleted_at')) {
+            return static::query()->whereRaw('1 = 0'); // Return empty result
+        }
+        
+        $instance = new static;
+        $query = $instance->newQuery();
+        $query->withoutGlobalScope('notDeleted')->whereNotNull('deleted_at');
+        return $query;
+    }
+    
+    /**
+     * Force a hard delete on a soft deleted model.
+     */
+    public function forceDelete()
+    {
+        $this->isForceDeleting = true;
+        return $this->delete();
+    }
 
     protected $fillable = [
         'first_name',
@@ -31,6 +131,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'customer_number',
         'email_verified_at',
         'admin_created',
+        'deleted_at',
     ];
 
     protected $hidden = [

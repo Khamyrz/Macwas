@@ -233,10 +233,14 @@ class AdminController extends Controller
 
     public function userRecords($role)
     {
-        $users = User::where('role', $role)
-            ->whereNull('deleted_at')
-            ->orderBy('created_at', 'asc')
-            ->paginate(10);
+        $query = User::where('role', $role);
+        
+        // Only filter by deleted_at if the column exists
+        if (Schema::hasColumn('users', 'deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+        
+        $users = $query->orderBy('created_at', 'asc')->paginate(10);
         return view('admin.user-records', compact('users', 'role'));
     }
 
@@ -566,17 +570,39 @@ class AdminController extends Controller
             ], 403);
         }
 
-        // Soft delete the user (moves to delete history)
-        $user->delete();
+        // Check if soft deletes are available
+        if (Schema::hasColumn('users', 'deleted_at')) {
+            // Soft delete the user (moves to delete history)
+            $user->delete();
+            $message = 'User deleted successfully! Account moved to delete history.';
+        } else {
+            // Fallback to hard delete if column doesn't exist
+            $user->waterBills()->delete();
+            $user->payments()->delete();
+            $user->customerPayments()->delete();
+            $user->waterConnections()->delete();
+            $user->customerConnections()->delete();
+            $user->forceDelete();
+            $message = 'User deleted successfully!';
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'User deleted successfully! Account moved to delete history.'
+            'message' => $message
         ]);
     }
 
     public function deleteHistory($role)
     {
+        // Check if soft deletes are available
+        if (!Schema::hasColumn('users', 'deleted_at')) {
+            return response()->json([
+                'success' => true,
+                'users' => [],
+                'message' => 'Soft delete feature not available. Please run migrations.'
+            ]);
+        }
+
         $deletedUsers = User::onlyTrashed()
             ->where('role', $role)
             ->orderBy('deleted_at', 'desc')
@@ -590,6 +616,14 @@ class AdminController extends Controller
 
     public function restoreUser($id)
     {
+        // Check if soft deletes are available
+        if (!Schema::hasColumn('users', 'deleted_at')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Soft delete feature not available. Please run migrations.'
+            ], 400);
+        }
+
         $user = User::onlyTrashed()->findOrFail($id);
         
         // Restore the user
@@ -611,6 +645,14 @@ class AdminController extends Controller
 
     public function clearUser($id)
     {
+        // Check if soft deletes are available
+        if (!Schema::hasColumn('users', 'deleted_at')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Soft delete feature not available. Please run migrations.'
+            ], 400);
+        }
+
         $user = User::onlyTrashed()->findOrFail($id);
         
         // Prevent permanent deletion of admin users
